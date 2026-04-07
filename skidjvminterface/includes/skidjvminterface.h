@@ -1,7 +1,10 @@
 #ifndef SKIDJVMINTERFACE_H
 #define SKIDJVMINTERFACE_H
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <Windows.h>
+#include <stdint.h>
 
 #define In_
 #define Out_
@@ -22,7 +25,7 @@ typedef const void* jclass;
 typedef const void* jobject;
 typedef const void* jmethodID;
 
-#define SJSuccess				         0
+#define SJSuccess				         1
 #define SJUnhandledError		         0x0001B
 #define SJInvalidState  		         0x000CB
 #define SJInvalidInParamaters	         0x0002B
@@ -46,23 +49,26 @@ typedef const void* jmethodID;
 
 #define NEW_STRUCT_LIST(x) \
 typedef struct _##x##List { \
-    x data;\
+    x* data;\
     DWORD size;\
 }##x##List
 
 typedef struct _VMStructEntry {
-    PCHAR typeName;           
+    PCHAR typeName;
     PCHAR fieldName;
     PCHAR typeString;
-    DWORD  isStatic;
-    DWORD offset;
+
+    int32_t  isStatic;
+    uint64_t offset;
+
     PVOID address;
 }VMStructEntry, *PVMStructEntry;
 
 typedef struct _ExportSymbol {
-    PCHAR name;         
-    DWORD ordinal;            
-    DWORD address;           
+    PCHAR name;
+    DWORD ordinal;
+    DWORD rva;
+    uint64_t address;
 }ExportSymbol, *PExportSymbol;
 
 NEW_STRUCT_LIST(VMStructEntry);
@@ -97,6 +103,10 @@ SJStatus ApiGetModuleAddress(Out_ PVOID* Module,
 SJStatus ApiNewJvmProcessByPid(Out_ PJvmProccess Proc, 
                                   In_ DWORD PID);
 
+SJStatus ApiGetExportSymbolsByProcess(Out_ ExportSymbolList* ExportSymbol, 
+                                      In_ JvmProccess Proc);
+BOOL ApiFreeExportFunctionList(In_ ExportSymbolList* list);
+
 /* Memory Api */
 VOID        ApiSetTargetHandle(HANDLE Proc);
 SJStatus    ApiWritemem(PVOID Buffer, PVOID Addres, size_t Size);
@@ -105,6 +115,10 @@ SJStatus    ApiReadmem(PVOID Buffer, PVOID Addres, size_t Size);
 /* Hotspot Api */
 SJStatus ApiNewHotspotContext(In_ PJvmProccess Proc, 
 							  Out_ PHotspotContext Context);
+
+SJStatus ApiNewVmStructsEntry(In_ JvmProccess Proc,
+                              In_ ExportSymbolList SymbolList, 
+                              Out_ VMStructEntryList* OutList);
 
 /* Jvm Interface Api */
 SJStatus ApiNewJvmInterface(In_ PHotspotContext Context, 

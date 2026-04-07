@@ -1,6 +1,7 @@
 #include "../includes/skidjvminterface.h"
 #include <Psapi.h>
 #include <TlHelp32.h>
+#include "stdio.h"
 
 SJStatus ApiFindFirstProcessByTitle(Out_ PJvmProccess Proc, In_ PCHAR ProcName, In_ PCHAR FindTitle)
 {
@@ -135,4 +136,137 @@ SJStatus ApiNewJvmProcessByPid(Out_ PJvmProccess Proc, In_ DWORD PID)
 	*Proc = Out;
 _return:
 	return Status;
+}
+
+ExportSymbolList InternalGetExportFunctionList(PJvmProccess proc) {
+	ExportSymbolList result = { NULL, 0 };
+
+	if (!proc || !proc->hJvmDll) {
+		return result;
+	}
+
+	IMAGE_DOS_HEADER dosHeader;
+	if (!ApiReadmem(&dosHeader, proc->hJvmDll, sizeof(dosHeader))) {
+		return result;
+	}
+
+	if (dosHeader.e_magic != IMAGE_DOS_SIGNATURE) {
+		return result;
+	}
+
+	IMAGE_NT_HEADERS64 ntHeaders;
+	uint64_t ntHeaderPos = (uint64_t)proc->hJvmDll + dosHeader.e_lfanew;
+	if (!ApiReadmem(&ntHeaders, (void*)ntHeaderPos, sizeof(ntHeaders))) {
+		return result;
+	}
+
+	if (ntHeaders.Signature != IMAGE_NT_SIGNATURE) {
+		return result;
+	}
+
+	IMAGE_DATA_DIRECTORY idd = ntHeaders.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
+	if (idd.VirtualAddress == 0 || idd.Size == 0) {
+		return result;
+	}
+
+	uint64_t exportDirAddr = (uint64_t)proc->hJvmDll + idd.VirtualAddress;
+	IMAGE_EXPORT_DIRECTORY exportDirectory;
+	if (!ApiReadmem(&exportDirectory, (void*)exportDirAddr, sizeof(exportDirectory))) {
+		return result;
+	}
+
+	uint64_t namesAddr = (uint64_t)proc->hJvmDll + exportDirectory.AddressOfNames;
+	uint64_t ordinalsAddr = (uint64_t)proc->hJvmDll + exportDirectory.AddressOfNameOrdinals;
+	uint64_t functionsAddr = (uint64_t)proc->hJvmDll + exportDirectory.AddressOfFunctions;
+
+	DWORD* names = (DWORD*)malloc(exportDirectory.NumberOfNames * sizeof(DWORD));
+	WORD* ordinals = (WORD*)malloc(exportDirectory.NumberOfNames * sizeof(WORD));
+	DWORD* functions = (DWORD*)malloc(exportDirectory.NumberOfFunctions * sizeof(DWORD));
+
+	if (!names || !ordinals || !functions) {
+		free(names);
+		free(ordinals);
+		free(functions);
+		return result;
+	}
+
+	if (!ApiReadmem(names, (void*)namesAddr, exportDirectory.NumberOfNames * sizeof(DWORD)) ||
+		!ApiReadmem(ordinals, (void*)ordinalsAddr, exportDirectory.NumberOfNames * sizeof(WORD)) ||
+		!ApiReadmem(functions, (void*)functionsAddr, exportDirectory.NumberOfFunctions * sizeof(DWORD))) {
+		free(names);
+		free(ordinals);
+		free(functions);
+		return result;
+	}
+
+	result.data = (PExportSymbol)malloc(exportDirectory.NumberOfNames * sizeof(ExportSymbol));
+	if (!result.data) {
+		free(names);
+		free(ordinals);
+		free(functions);
+		return result;
+	}
+
+	for (DWORD i = 0; i < exportDirectory.NumberOfNames; i++) {
+		char exportName[256] = { 0 };
+		uint64_t nameAddr = (uint64_t)proc->hJvmDll + names[i];
+
+		if (ApiReadmem(exportName, (void*)nameAddr, sizeof(exportName) - 1)) {
+			size_t nameLen = strlen(exportName);
+			result.data[i].name = (char*)malloc(nameLen + 1);
+			if (result.data[i].name) {
+				memcpy(result.data[i].name, exportName, nameLen + 1);
+			}
+			else {
+				result.data[i].name = NULL;
+			}
+			result.data[i].ordinal = ordinals[i] + exportDirectory.Base;
+			result.data[i].rva = functions[ordinals[i]];
+			result.data[i].address = (uint64_t)proc->hJvmDll + functions[ordinals[i]];
+		}
+		else {
+			result.data[i].name = NULL;
+			result.data[i].ordinal = 0;
+			result.data[i].rva = 0;
+			result.data[i].address = 0;
+		}
+	}
+	result.size = exportDirectory.NumberOfNames;
+
+	free(names);
+	free(ordinals);
+	free(functions);
+
+	return result;
+}
+
+SJStatus ApiGetExportSymbolsByProcess(Out_ ExportSymbolList* OutExportSymbolList, In_ JvmProccess Proc)
+{
+	ApiSetTargetHandle(Proc.hProccess);
+
+	ExportSymbolList Out = InternalGetExportFunctionList(&Proc);
+	if (Out.size == 0) {
+		return SJStatusNotFound;
+	}
+
+	*OutExportSymbolList = Out;
+	return SJSuccess;
+}
+
+BOOL ApiFreeExportFunctionList(In_ ExportSymbolList* list) {
+	if (!list || !list->data) {
+		return FALSE;
+	}
+
+	for (DWORD i = 0; i < list->size; i++) {
+		if (list->data[i].name) {
+			free(list->data[i].name);
+		}
+	}
+
+	free(list->data);
+	list->data = NULL;
+	list->size = 0;
+
+	return TRUE;
 }
