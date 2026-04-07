@@ -1,5 +1,12 @@
 #include "stdio.h"
 
-int main(int argc, void* argv) {
-	printf("Hello, world!\n");
+#include <skidjvminterface.h>
+
+int main(int argc, void* argv) 
+{
+	JvmProccess proc;
+	SJStatus status = ApiFindFirstProcessByTitle(&proc, "javaw.exe", "Minecraft");
+
+
+	printf("%d \n", status);
 }
