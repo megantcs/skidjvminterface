@@ -1,0 +1,4 @@
+#ifndef SKIDJVMINTERFACE_H
+#define SKIDJVMINTERFACE_H
+
+#endif
