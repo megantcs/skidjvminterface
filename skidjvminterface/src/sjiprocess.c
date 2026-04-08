@@ -5,8 +5,7 @@
 #include <Psapi.h>
 #include <TlHelp32.h>
 #include "stdio.h"
-
-SJStatus ApiFindFirstProcessByTitle(Out_ PJvmProccess Proc, In_ PCHAR ProcName, In_ PCHAR FindTitle)
+SJStatus ApiFindFirstProcessByTitle(Out_ PJvmProccess Proc, In_ CONST PCHAR ProcName, In_ CONST PCHAR FindTitle)
 {
 	SJStatus Status = SJSuccess;
 	HANDLE hSnapshot = INVALID_HANDLE_VALUE;
@@ -94,7 +93,7 @@ DWORD ApiGetPidByName(PWCHAR name)
 	return pid;
 }
 
-SJStatus ApiGetModuleAddress(Out_ PVOID* Module, In_ HANDLE Process, In_ PCHAR ModuleName)
+SJStatus ApiGetModuleAddress(Out_ PVOID* Module, In_ HANDLE Process, In_ CONST PCHAR ModuleName)
 {
 	HMODULE mods[128] = { 0 };
 	DWORD count = 0;

@@ -118,7 +118,7 @@ _return:
     return Status;
 }
 
-PVMStructEntry ApiFindStructure(VMStructEntryList* list, PCHAR typeName, PCHAR fieldName)
+PVMStructEntry ApiFindStructure(VMStructEntryList* list, CONST PCHAR typeName, CONST  PCHAR fieldName)
 {
     assert(list && "List cannot be nullptr");
     assert(typeName && "TypeName cannot be nullptr");
@@ -170,4 +170,156 @@ _return:
     }
 
     return Status;
+}
+void AccessFlagsInit(AccessFlags* af, uint16_t flags) {
+    af->_flags = flags;
+}
+
+void AccessFlagsInitDefault(AccessFlags* af) {
+    af->_flags = 0;
+}
+
+boolean AccessIsPublic(const AccessFlags* af) {
+    return (af->_flags & 0x0001) != 0;
+}
+
+boolean AccessIsPrivate(const AccessFlags* af) {
+    return (af->_flags & 0x0002) != 0;
+}
+
+boolean AccessIsProtected(const AccessFlags* af) {
+    return (af->_flags & 0x0004) != 0;
+}
+
+boolean AccessIsStatic(const AccessFlags* af) {
+    return (af->_flags & 0x0008) != 0;
+}
+
+boolean AccessIsFinal(const AccessFlags* af) {
+    return (af->_flags & 0x0010) != 0;
+}
+
+boolean AccessIsVolatile(const AccessFlags* af) {
+    return (af->_flags & 0x0040) != 0;
+}
+
+boolean AccessIsTransient(const AccessFlags* af) {
+    return (af->_flags & 0x0080) != 0;
+}
+
+uint32_t AccessFlagMask(int p) {
+    return (uint32_t)1 << p;
+}
+
+void FieldFlagsInit(FieldFlags* ff, uint32_t flags) {
+    ff->_flags = flags;
+}
+
+void FieldFlagsInitDefault(FieldFlags* ff) {
+    ff->_flags = 0;
+}
+
+boolean FieldFlagsTestFlag(const FieldFlags* ff, FieldFlagsBitPosition pos) {
+    return (ff->_flags & (1u << pos)) != 0;
+}
+
+void FieldFlagsUpdateFlag(FieldFlags* ff, FieldFlagsBitPosition pos, boolean z) {
+    if (z) {
+        ff->_flags |= (1u << pos);
+    }
+    else {
+        ff->_flags &= ~(1u << pos);
+    }
+}
+
+uint32_t FieldFlagsAsUint(const FieldFlags* ff) {
+    return ff->_flags;
+}
+
+boolean FieldFlagsHasAnyOptionals(const FieldFlags* ff) {
+    return (ff->_flags & FIELD_FLAGS_OPTIONAL_ITEM_BIT_MASK) != 0;
+}
+
+boolean FieldFlagsIsInitialized(const FieldFlags* ff) {
+    return FieldFlagsTestFlag(ff, FF_INITIALIZED);
+}
+
+boolean FieldFlagsIsInjected(const FieldFlags* ff) {
+    return FieldFlagsTestFlag(ff, FF_INJECTED);
+}
+
+boolean FieldFlagsIsGeneric(const FieldFlags* ff) {
+    return FieldFlagsTestFlag(ff, FF_GENERIC);
+}
+
+boolean FieldFlagsIsStable(const FieldFlags* ff) {
+    return FieldFlagsTestFlag(ff, FF_STABLE);
+}
+
+boolean FieldFlagsIsContended(const FieldFlags* ff) {
+    return FieldFlagsTestFlag(ff, FF_CONTENDED);
+}
+
+void FieldFlagsSetInitialized(FieldFlags* ff, boolean z) {
+    FieldFlagsUpdateFlag(ff, FF_INITIALIZED, z);
+}
+
+void FieldFlagsSetInjected(FieldFlags* ff, boolean z) {
+    FieldFlagsUpdateFlag(ff, FF_INJECTED, z);
+}
+
+void FieldFlagsSetGeneric(FieldFlags* ff, boolean z) {
+    FieldFlagsUpdateFlag(ff, FF_GENERIC, z);
+}
+
+void FieldFlagsSetStable(FieldFlags* ff, boolean z) {
+    FieldFlagsUpdateFlag(ff, FF_STABLE, z);
+}
+
+void FieldFlagsSetContended(FieldFlags* ff, boolean z) {
+    FieldFlagsUpdateFlag(ff, FF_CONTENDED, z);
+}
+
+void FieldFlagsMarkInitialized(FieldFlags* ff) {
+    FieldFlagsSetInitialized(ff, 1);
+}
+
+void FieldFlagsMarkInjected(FieldFlags* ff) {
+    FieldFlagsSetInjected(ff, 1);
+}
+
+void FieldFlagsMarkGeneric(FieldFlags* ff) {
+    FieldFlagsSetGeneric(ff, 1);
+}
+
+void FieldFlagsMarkStable(FieldFlags* ff) {
+    FieldFlagsSetStable(ff, 1);
+}
+
+void FieldFlagsMarkContended(FieldFlags* ff) {
+    FieldFlagsSetContended(ff, 1);
+}
+
+void FieldInfo20InitDefault(FieldInfo20* fi) {
+    fi->_index = 0;
+    fi->_name_index = 0;
+    fi->_signature_index = 0;
+    fi->_offset = 0;
+    AccessFlagsInitDefault(&fi->_access_flags);
+    FieldFlagsInitDefault(&fi->_field_flags);
+    fi->_initializer_index = 0;
+    fi->_generic_signature_index = 0;
+    fi->_contention_group = 0;
+}
+
+uint16_t FieldInfo20NameIndex(const FieldInfo20* fi) {
+    return fi->_name_index;
+}
+
+uint16_t FieldInfo20SignatureIndex(const FieldInfo20* fi) {
+    return fi->_signature_index;
+}
+
+int FieldInfo20Offset(const FieldInfo20* fi) {
+    return (int)fi->_offset;
 }

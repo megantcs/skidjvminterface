@@ -27,8 +27,10 @@ SJStatus ApiNewJvmInterface(In_ PHotspotContext Context,
     if (Context == NULL || Context->Proc == NULL || Context->VMStructs.size == 0 || Interface == NULL)
         return SJInvalidInParamaters;
 
-    if (Context->Proc->version == 17) {
-        return ApiNewJvmInterfaceFor17J(Context, Interface);
+    switch (Context->Proc->version) {
+         case 17: return ApiNewJvmInterfaceFor17J(Context, Interface);
+         case 21: return ApiNewJvmInterfaceFor21J(Context, Interface);
     }
+
     return SJStatusNotFound;
 }

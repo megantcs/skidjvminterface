@@ -9,7 +9,9 @@
 
 #define In_
 #define Out_
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef unsigned char JvmVersion;
 typedef short		  SJStatus;
 
@@ -79,6 +81,64 @@ typedef struct _ExportSymbol {
     DWORD rva;
     uint64_t address;
 }ExportSymbol, *PExportSymbol;
+
+/* For 17 Jvm */
+typedef struct {
+    uint16_t _flags;
+} AccessFlags;
+
+typedef struct {
+    uint32_t phar;
+    uint16_t _length;
+    char _body[255];
+} Symbol;
+typedef struct {
+    uint16_t _shorts[6];
+} FieldInfo17;
+
+enum FieldOffset {
+    AccessFlagsOffset = 0,
+    NameIndexOffset = 1,
+    SignatureIndexOffset = 2,
+    InitvalIndexOffset = 3,
+    LowPackedOffset = 4,
+    HighPackedOffset = 5,
+    FieldSlots = 6
+};
+/* --------------------------------------------------- */
+
+/* For 21 Jvm */
+
+typedef enum {
+    FF_INITIALIZED,
+    FF_INJECTED,
+    FF_GENERIC,
+    FF_STABLE,
+    FF_CONTENDED
+} FieldFlagsBitPosition;
+
+static const uint32_t FIELD_FLAGS_OPTIONAL_ITEM_BIT_MASK =
+(1u << FF_INITIALIZED) |
+(1u << FF_GENERIC) |
+(1u << FF_CONTENDED);
+
+typedef struct {
+    uint32_t _flags;
+} FieldFlags;
+
+
+typedef struct
+{
+    uint32_t _index;
+    uint16_t _name_index;
+    uint16_t _signature_index;
+    uint32_t _offset;
+    AccessFlags _access_flags;
+    FieldFlags _field_flags;
+    uint16_t _initializer_index;
+    uint16_t _generic_signature_index;
+    uint16_t _contention_group;
+}FieldInfo20;
 
 /* Arrays */
 NEW_STRUCT_LIST(VMStructEntry);     // VMStructEntryList
@@ -155,16 +215,58 @@ typedef struct _IJVMINTERFACE {
     jobject(*allocObject)(jclass clazz);
 } IJVMINTERFACE, * PIJVMINTERFACE;
 
+void AccessFlagsInit(AccessFlags* af, uint16_t flags);
+void AccessFlagsInitDefault(AccessFlags* af);
+
+boolean AccessIsPublic(const AccessFlags* af);
+boolean AccessIsPrivate(const AccessFlags* af);
+boolean AccessIsProtected(const AccessFlags* af);
+boolean AccessIsStatic(const AccessFlags* af);
+boolean AccessIsFinal(const AccessFlags* af);
+boolean AccessIsVolatile(const AccessFlags* af);
+boolean AccessIsTransient(const AccessFlags* af);
+uint32_t AccessFlagMask(int p);
+
+void FieldFlagsInit(FieldFlags* ff, uint32_t flags);
+void FieldFlagsInitDefault(FieldFlags* ff);
+boolean FieldFlagsTestFlag(const FieldFlags* ff, FieldFlagsBitPosition pos);
+void FieldFlagsUpdateFlag(FieldFlags* ff, FieldFlagsBitPosition pos, boolean z);
+uint32_t FieldFlagsAsUint(const FieldFlags* ff);
+
+boolean FieldFlagsHasAnyOptionals(const FieldFlags* ff);
+boolean FieldFlagsIsInitialized(const FieldFlags* ff);
+boolean FieldFlagsIsInjected(const FieldFlags* ff);
+boolean FieldFlagsIsGeneric(const FieldFlags* ff);
+boolean FieldFlagsIsStable(const FieldFlags* ff);
+boolean FieldFlagsIsContended(const FieldFlags* ff);
+
+void FieldFlagsSetInitialized(FieldFlags* ff, boolean z);
+void FieldFlagsSetInjected(FieldFlags* ff, boolean z);
+void FieldFlagsSetGeneric(FieldFlags* ff, boolean z);
+void FieldFlagsSetStable(FieldFlags* ff, boolean z);
+void FieldFlagsSetContended(FieldFlags* ff, boolean z);
+
+void FieldFlagsMarkInitialized(FieldFlags* ff);
+void FieldFlagsMarkInjected(FieldFlags* ff);
+void FieldFlagsMarkGeneric(FieldFlags* ff);
+void FieldFlagsMarkStable(FieldFlags* ff);
+void FieldFlagsMarkContended(FieldFlags* ff);
+
+void FieldInfo20InitDefault(FieldInfo20* fi);
+uint16_t FieldInfo20NameIndex(const FieldInfo20* fi);
+uint16_t FieldInfo20SignatureIndex(const FieldInfo20* fi);
+int FieldInfo20Offset(const FieldInfo20* fi);
+
 /* Process Api */
 SJStatus ApiFindFirstProcessByTitle(Out_ PJvmProccess Proc, 
-                                    In_ PCHAR ProcName, 
-                                    In_ PCHAR FindTitle);
+                                    In_ CONST PCHAR ProcName,
+                                    In_ CONST PCHAR FindTitle);
 
 DWORD ApiGetPidByName(PWCHAR Name);
 
 SJStatus ApiGetModuleAddress(Out_ PVOID* Module, 
                             In_ HANDLE Process, 
-                            In_ PCHAR ModuleName);
+                            In_ CONST PCHAR ModuleName);
 
 SJStatus ApiNewJvmProcessByPid(Out_ PJvmProccess Proc, 
                                In_ DWORD PID);
@@ -190,8 +292,9 @@ SJStatus ApiNewVmStructsEntry(In_ JvmProccess Proc,
                               In_ ExportSymbolList SymbolList, 
                               Out_ VMStructEntryList* OutList);
 
-PVMStructEntry ApiFindStructure(VMStructEntryList* list, PCHAR typeName, PCHAR fieldName);
-
+PVMStructEntry ApiFindStructure(VMStructEntryList* list,
+    CONST PCHAR typeName, 
+    CONST PCHAR fieldName);
 /* Jvm Interface Api */
 SJStatus ApiNewJvmInterface(In_ PHotspotContext Context,
                             Out_ PIJVMINTERFACE* Interface);
@@ -199,10 +302,15 @@ SJStatus ApiNewJvmInterface(In_ PHotspotContext Context,
 SJStatus ApiNewJvmInterfaceFor17J(In_ PHotspotContext Context,
                                   Out_ PIJVMINTERFACE* Interface);
 
+SJStatus ApiNewJvmInterfaceFor21J(In_ PHotspotContext Context, 
+                                  Out_ PIJVMINTERFACE* Interface);
 /* Macros for deployment */
 #define ExpandedBodyReturnStatus \
 	SJStatus Status = SJSuccess; \
 _return:\
 return Status;\
 
+#ifdef __cplusplus
+}
+#endif
 #endif
