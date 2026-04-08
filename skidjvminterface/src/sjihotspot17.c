@@ -1,12 +1,8 @@
 #include "../includes/skidjvminterface.h"
 #include <string.h>
-<<<<<<< HEAD
-=======
-#include <stdio.h>
->>>>>>> 01e1a52d8fb32884195b12d1f4e32380b4729336
 
-PHotspotContext ActivityContext = NULL;
-PVOID jvm = NULL;
+static PHotspotContext ActivityContext = NULL;
+static PVOID jvm = NULL;
 
 static VMStructEntry* NextLinkEntry = NULL;
 static VMStructEntry* NameEntry = NULL;
@@ -27,64 +23,64 @@ static VMStructEntry* KlassPointerShift = NULL;
 
 
 
-void* GetPointer(void* pointer)
+static void* GetPointer(void* pointer)
 {
     void* buffer = 0;
     ApiReadmem(&buffer, pointer, sizeof(void*));
     return buffer;
 }
 
-PVMStructEntry FindStructure(PCHAR typeName, PCHAR fieldName) {
+static PVMStructEntry FindStructure(PCHAR typeName, PCHAR fieldName) {
     return ApiFindStructure(&ActivityContext->VMStructs, typeName, fieldName);
 }
 
-VMStructEntry* Compressed17OopBaseAddres()
+static VMStructEntry* Compressed17OopBaseAddres()
 {
     return FindStructure("CompressedOops", "_narrow_oop._base");
 }
 
-VMStructEntry* Compressed17OopShiftAddres()
+static VMStructEntry* Compressed17OopShiftAddres()
 {
     return FindStructure("CompressedOops", "_narrow_oop._shift");
 }
 
-VMStructEntry* Compressed17GetNullCheck()
+static VMStructEntry* Compressed17GetNullCheck()
 {
     return FindStructure("CompressedOops", "_narrow_oop._use_implicit_null_checks");
 }
 
-VMStructEntry* CompressedPointer17Base()
+static VMStructEntry* CompressedPointer17Base()
 {
     return FindStructure("CompressedKlassPointers", "_narrow_klass._base");
 }
 
-VMStructEntry* CompressedPointer17Shift()
+static VMStructEntry* CompressedPointer17Shift()
 {
     return FindStructure("CompressedKlassPointers", "_narrow_klass._shift");
 }
 
-VMStructEntry* ClassLoaderDataGraph17Head() { return FindStructure("ClassLoaderDataGraph", "_head"); }
+static VMStructEntry* ClassLoaderDataGraph17Head() { return FindStructure("ClassLoaderDataGraph", "_head"); }
 
-void* ClassLoaderDataGraph17GetClassLoader()
+static void* ClassLoaderDataGraph17GetClassLoader()
 {
     VMStructEntry* headEntry = ClassLoaderDataGraph17Head();
     return GetPointer(headEntry->address);
 }
 
-VMStructEntry* Next() { return FindStructure("ClassLoaderData", "_next"); }
-VMStructEntry* Klasses() { return FindStructure("ClassLoaderData", "_klasses"); }
+static VMStructEntry* Next() { return FindStructure("ClassLoaderData", "_next"); }
+static VMStructEntry* Klasses() { return FindStructure("ClassLoaderData", "_klasses"); }
 
-void* ClassLoaderData17GetNext() {
+static void* ClassLoaderData17GetNext() {
     VMStructEntry* entry = Next();
     return entry ? GetPointer(PTRMATH(ClassLoaderDataGraph17GetClassLoader() + entry->offset)) : (void*)0;
 }
 
-void* ClassLoaderData17GetKlasses() {
+static void* ClassLoaderData17GetKlasses() {
     VMStructEntry* entry = Klasses();
     return entry ? GetPointer(PTRMATH(ClassLoaderDataGraph17GetClassLoader() + entry->offset)) : (void*)0;
 }
 
-uintptr_t GetCompressedKlassPointersBase()
+static uintptr_t GetCompressedKlassPointersBase()
 {
     uintptr_t base = 0;
     VMStructEntry* narrowKlassBase = FindStructure("CompressedKlassPointers", "_narrow_klass._base");
@@ -95,7 +91,7 @@ uintptr_t GetCompressedKlassPointersBase()
     return base;
 }
 
-int GetCompressedKlassPointersOopShift()
+static int GetCompressedKlassPointersOopShift()
 {
     int shift = 0;
     VMStructEntry* narrowKlassShift = FindStructure("CompressedKlassPointers", "_narrow_klass._shift");
@@ -107,7 +103,7 @@ int GetCompressedKlassPointersOopShift()
 }
 
 
-uintptr_t GetCompressedOopBase()
+static uintptr_t GetCompressedOopBase()
 {
     uintptr_t base = 0;
     VMStructEntry* narrowOopBase = FindStructure("CompressedOops", "_narrow_oop._base");
@@ -118,7 +114,7 @@ uintptr_t GetCompressedOopBase()
     return base;
 }
 
-int GetCompressedOopShift()
+static int GetCompressedOopShift()
 {
     int shift = 0;
     VMStructEntry* narrowOopShift = FindStructure("CompressedOops", "_narrow_oop._shift");
@@ -129,7 +125,7 @@ int GetCompressedOopShift()
     return shift;
 };
 
-char GetCompressedNullChecks()
+static char GetCompressedNullChecks()
 {
     char null_checks = 0;
 
@@ -141,32 +137,32 @@ char GetCompressedNullChecks()
     return null_checks;
 }
 
-VMStructEntry* ConstantPool17Length()
+static VMStructEntry* ConstantPool17Length()
 {
     return FindStructure("ConstantPool", "_length");
 }
 
-VMStructEntry* KlassNextLink()
+static VMStructEntry* KlassNextLink()
 {
     return FindStructure("Klass", "_next_link");
 }
 
-VMStructEntry* KlassName()
+static VMStructEntry* KlassName()
 {
     return FindStructure("Klass", "_name");
 }
 
-VMStructEntry* KlassJavaMirror()
+static VMStructEntry* KlassJavaMirror()
 {
     return FindStructure("Klass", "_java_mirror");
 }
 
-VMStructEntry* KlassSuper()
+static VMStructEntry* KlassSuper()
 {
     return FindStructure("Klass", "_super");
 }
 
-VMStructEntry* InstanceKlassFieldinfoStream()
+static VMStructEntry* InstanceKlassFieldinfoStream()
 {
     VMStructEntry* entry = FindStructure("InstanceKlass", "_fields");
     if (!entry)
@@ -176,22 +172,22 @@ VMStructEntry* InstanceKlassFieldinfoStream()
     return entry;
 }
 
-VMStructEntry* InstanceKlassConstants()
+static VMStructEntry* InstanceKlassConstants()
 {
     return FindStructure("InstanceKlass", "_constants");
 }
 
-VMStructEntry* InstanceKlassMethods()
+static VMStructEntry* InstanceKlassMethods()
 {
     return FindStructure("InstanceKlass", "_methods");
 }
 
-VMStructEntry* InstanceKlassJavaFieldsCount()
+static VMStructEntry* InstanceKlassJavaFieldsCount()
 {
     return FindStructure("InstanceKlass", "_java_fields_count");
 }
 
-void InitEntries(void)
+static void InitEntries(void)
 {
     static int initialized = 0;
     if (initialized) return;
@@ -215,20 +211,6 @@ void InitEntries(void)
     initialized = 1;
 }
 
-typedef struct {
-    uint16_t _shorts[6];
-} FieldInfo17;
-
-enum FieldOffset {
-    AccessFlagsOffset = 0,
-    NameIndexOffset = 1,
-    SignatureIndexOffset = 2,
-    InitvalIndexOffset = 3,
-    LowPackedOffset = 4,
-    HighPackedOffset = 5,
-    FieldSlots = 6
-};
-
 static inline uint16_t FieldInfo17NameIndex(const FieldInfo17* f) {
     return f->_shorts[NameIndexOffset];
 }
@@ -241,19 +223,9 @@ static inline int FieldInfo17Offset(const FieldInfo17* f) {
     return (((int)(((unsigned int)f->_shorts[HighPackedOffset] << 16) | (unsigned int)f->_shorts[LowPackedOffset])) >> 2);
 }
 
-typedef struct {
-    uint16_t _flags;
-} AccessFlags;
-
 static inline int AccessFlagsIsStatic(const AccessFlags* af) {
     return (af->_flags & 0x0008) != 0;
 }
-
-typedef struct {
-    uint32_t phar;
-    uint16_t _length;
-    char _body[255];
-} Symbol;
 
 static inline void SymbolRead(Symbol* sym, void* address) {
     ApiReadmem(sym, address, sizeof(Symbol));
@@ -265,65 +237,44 @@ static inline void SymbolGetString(const Symbol* sym, char* buffer, size_t size)
     buffer[len] = '\0';
 }
 
-uint32_t EncodeOop(void* oop) {
+static uint32_t EncodeOop(void* oop) {
     uintptr_t base = GetCompressedOopBase();
     int shift = GetCompressedOopShift();
     uintptr_t oopAddr = (uintptr_t)oop;
     return (uint32_t)((oopAddr - base) >> shift);
 }
 
-void* DecodeOop(uint32_t compressedOop) {
+static void* DecodeOop(uint32_t compressedOop) {
     uintptr_t base = GetCompressedOopBase();
     int shift = GetCompressedOopShift();
     return (void*)(((uintptr_t)compressedOop << shift) + base);
 }
 
-void* DecodeKlass(jclass klass)
+static void* DecodeKlass(jclass klass)
 {
     uintptr_t value = (uintptr_t)klass;
 
     if (NullCheckEntry)
     {
-        char flag ;
+        char flag;
         void* base;
         int shift;
         flag = GetCompressedNullChecks();
         base = (void*)GetCompressedKlassPointersBase();
         shift = GetCompressedKlassPointersOopShift();
 
-<<<<<<< HEAD
         assert(flag || base || shift);
-=======
-        if (!flag || !base || !shift)
-        {
-            printf("Error at get base or flags or shift\n");
-
-        }
->>>>>>> 01e1a52d8fb32884195b12d1f4e32380b4729336
 
         if (flag)
         {
             value = (value << shift) + (uintptr_t)base;
         }
-<<<<<<< HEAD
     }
-
-=======
-        else
-        {
-            printf("Error at flag by DecodeKlas\n");
-        }
-    }
-    else
-    {
-        printf("Erorr at NullCheckEntry by DecodeKlass\n");
-    }
->>>>>>> 01e1a52d8fb32884195b12d1f4e32380b4729336
     return (jclass)klass;
 };
 
 
-jobject DecodeOopJobject(jobject oop) {
+static jobject DecodeOopJobject(jobject oop) {
     uintptr_t base = 0;
     int shift = 0;
     uintptr_t oopValue = (uintptr_t)oop;
@@ -341,7 +292,7 @@ jobject DecodeOopJobject(jobject oop) {
     return oop;
 }
 
-jclass FindClass(PCHAR name) {
+static jclass FindClass(PCHAR name) {
     if (!name) return NULL;
 
     InitEntries();
@@ -374,7 +325,7 @@ jclass FindClass(PCHAR name) {
     return NULL;
 }
 
-jfieldID FindField(jclass clazz, PCHAR fieldName, PCHAR signature) {
+static jfieldID FindField(jclass clazz, PCHAR fieldName, PCHAR signature) {
     if (!clazz || !fieldName) return 0;
 
     InitEntries();
@@ -423,14 +374,14 @@ jfieldID FindField(jclass clazz, PCHAR fieldName, PCHAR signature) {
     return 0;
 }
 
-jint GetArrayLen(jobject oop) {
+static jint GetArrayLen(jobject oop) {
     jint length = 0;
     int offset = (NullCheckEntry && NullCheckEntry->address) ? 0xC : 0x10;
     ApiReadmem(&length, PTRMATH((uintptr_t)oop + offset), sizeof(length));
     return length;
 }
 
-void GetObjectArrayElement(jobject oop, jobject* array, int start, int end) {
+static void GetObjectArrayElement(jobject oop, jobject* array, int start, int end) {
     int base = (NullCheckEntry && NullCheckEntry->address) ? 0x10 : 0x18;
     jint length = GetArrayLen(oop);
     end += start;
@@ -442,65 +393,65 @@ void GetObjectArrayElement(jobject oop, jobject* array, int start, int end) {
     }
 }
 
-jobject GetObjectField(jobject obj, jfieldID fieldID) {
+static jobject GetObjectField(jobject obj, jfieldID fieldID) {
     uint32_t val = 0;
     ApiReadmem(&val, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(uint32_t));
     return DecodeOopJobject((jobject)(uintptr_t)val);
 }
 
-jobject GetFieldObject(jobject obj, jfieldID fieldID) {
+static jobject GetFieldObject(jobject obj, jfieldID fieldID) {
     return GetObjectField(obj, fieldID);
 }
 
-jint GetFieldInt(jobject obj, jfieldID fieldID) {
+static jint GetFieldInt(jobject obj, jfieldID fieldID) {
     jint value = 0;
     ApiReadmem(&value, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(jint));
     return value;
 }
 
-jfloat GetFieldFloat(jobject obj, jfieldID fieldID) {
+static jfloat GetFieldFloat(jobject obj, jfieldID fieldID) {
     jfloat value = 0;
     ApiReadmem(&value, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(jfloat));
     return value;
 }
 
-jdouble GetFieldDouble(jobject obj, jfieldID fieldID) {
+static jdouble GetFieldDouble(jobject obj, jfieldID fieldID) {
     jdouble value = 0;
     ApiReadmem(&value, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(jdouble));
     return value;
 }
 
-jboolean GetFieldBoolean(jobject obj, jfieldID fieldID) {
+static jboolean GetFieldBoolean(jobject obj, jfieldID fieldID) {
     jboolean value = 0;
     ApiReadmem(&value, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(jboolean));
     return value;
 }
 
-jbyte GetFieldByte(jobject obj, jfieldID fieldID) {
+static jbyte GetFieldByte(jobject obj, jfieldID fieldID) {
     jbyte value = 0;
     ApiReadmem(&value, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(jbyte));
     return value;
 }
 
-jchar GetFieldChar(jobject obj, jfieldID fieldID) {
+static jchar GetFieldChar(jobject obj, jfieldID fieldID) {
     jchar value = 0;
     ApiReadmem(&value, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(jchar));
     return value;
 }
 
-jshort GetFieldShort(jobject obj, jfieldID fieldID) {
+static jshort GetFieldShort(jobject obj, jfieldID fieldID) {
     jshort value = 0;
     ApiReadmem(&value, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(jshort));
     return value;
 }
 
-jlong GetFieldLong(jobject obj, jfieldID fieldID) {
+static jlong GetFieldLong(jobject obj, jfieldID fieldID) {
     jlong value = 0;
     ApiReadmem(&value, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(jlong));
     return value;
 }
 
-jobject GetStaticFieldObject(jclass clazz, jfieldID fieldID) {
+static jobject GetStaticFieldObject(jclass clazz, jfieldID fieldID) {
     if (!clazz || !fieldID) return NULL;
 
     jobject javaMirror;
@@ -517,7 +468,7 @@ jobject GetStaticFieldObject(jclass clazz, jfieldID fieldID) {
     return DecodeOopJobject((jobject)(uintptr_t)compressedValue);
 }
 
-jint GetStaticFieldInt(jclass clazz, jfieldID fieldID) {
+static jint GetStaticFieldInt(jclass clazz, jfieldID fieldID) {
     if (!clazz || !fieldID) return 0;
 
     jobject javaMirror;
@@ -533,7 +484,7 @@ jint GetStaticFieldInt(jclass clazz, jfieldID fieldID) {
     return value;
 }
 
-jfloat GetStaticFieldFloat(jclass clazz, jfieldID fieldID) {
+static jfloat GetStaticFieldFloat(jclass clazz, jfieldID fieldID) {
     if (!clazz || !fieldID) return 0;
 
     jobject javaMirror;
@@ -549,7 +500,7 @@ jfloat GetStaticFieldFloat(jclass clazz, jfieldID fieldID) {
     return value;
 }
 
-jdouble GetStaticFieldDouble(jclass clazz, jfieldID fieldID) {
+static jdouble GetStaticFieldDouble(jclass clazz, jfieldID fieldID) {
     if (!clazz || !fieldID) return 0;
 
     jobject javaMirror;
@@ -565,7 +516,7 @@ jdouble GetStaticFieldDouble(jclass clazz, jfieldID fieldID) {
     return value;
 }
 
-jboolean GetStaticFieldBoolean(jclass clazz, jfieldID fieldID) {
+static jboolean GetStaticFieldBoolean(jclass clazz, jfieldID fieldID) {
     if (!clazz || !fieldID) return 0;
 
     jobject javaMirror;
@@ -581,7 +532,7 @@ jboolean GetStaticFieldBoolean(jclass clazz, jfieldID fieldID) {
     return value;
 }
 
-jbyte GetStaticFieldByte(jclass clazz, jfieldID fieldID) {
+static jbyte GetStaticFieldByte(jclass clazz, jfieldID fieldID) {
     if (!clazz || !fieldID) return 0;
 
     jobject javaMirror;
@@ -597,7 +548,7 @@ jbyte GetStaticFieldByte(jclass clazz, jfieldID fieldID) {
     return value;
 }
 
-jchar GetStaticFieldChar(jclass clazz, jfieldID fieldID) {
+static jchar GetStaticFieldChar(jclass clazz, jfieldID fieldID) {
     if (!clazz || !fieldID) return 0;
 
     jobject javaMirror;
@@ -613,7 +564,7 @@ jchar GetStaticFieldChar(jclass clazz, jfieldID fieldID) {
     return value;
 }
 
-jshort GetStaticFieldShort(jclass clazz, jfieldID fieldID) {
+static jshort GetStaticFieldShort(jclass clazz, jfieldID fieldID) {
     if (!clazz || !fieldID) return 0;
 
     jobject javaMirror;
@@ -629,7 +580,7 @@ jshort GetStaticFieldShort(jclass clazz, jfieldID fieldID) {
     return value;
 }
 
-jlong GetStaticFieldLong(jclass clazz, jfieldID fieldID) {
+static jlong GetStaticFieldLong(jclass clazz, jfieldID fieldID) {
     if (!clazz || !fieldID) return 0;
 
     jobject javaMirror;
@@ -645,53 +596,53 @@ jlong GetStaticFieldLong(jclass clazz, jfieldID fieldID) {
     return value;
 }
 
-void SetFieldObject(jobject obj, jfieldID fieldID, jobject value) {
+static void SetFieldObject(jobject obj, jfieldID fieldID, jobject value) {
     if (!obj || !fieldID) return;
     uint32_t compressed = EncodeOop((void*)value);
     ApiWritemem(&compressed, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(uint32_t));
 }
 
-void SetFieldInt(jobject obj, jfieldID fieldID, jint value) {
+static void SetFieldInt(jobject obj, jfieldID fieldID, jint value) {
     if (!obj || !fieldID) return;
     ApiWritemem(&value, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(jint));
 }
 
-void SetFieldFloat(jobject obj, jfieldID fieldID, jfloat value) {
+static void SetFieldFloat(jobject obj, jfieldID fieldID, jfloat value) {
     if (!obj || !fieldID) return;
     ApiWritemem(&value, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(jfloat));
 }
 
-void SetFieldDouble(jobject obj, jfieldID fieldID, jdouble value) {
+static void SetFieldDouble(jobject obj, jfieldID fieldID, jdouble value) {
     if (!obj || !fieldID) return;
     ApiWritemem(&value, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(jdouble));
 }
 
-void SetFieldBoolean(jobject obj, jfieldID fieldID, jboolean value) {
+static void SetFieldBoolean(jobject obj, jfieldID fieldID, jboolean value) {
     if (!obj || !fieldID) return;
     ApiWritemem(&value, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(jboolean));
 }
 
-void SetFieldByte(jobject obj, jfieldID fieldID, jbyte value) {
+static void SetFieldByte(jobject obj, jfieldID fieldID, jbyte value) {
     if (!obj || !fieldID) return;
     ApiWritemem(&value, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(jbyte));
 }
 
-void SetFieldChar(jobject obj, jfieldID fieldID, jchar value) {
+static void SetFieldChar(jobject obj, jfieldID fieldID, jchar value) {
     if (!obj || !fieldID) return;
     ApiWritemem(&value, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(jchar));
 }
 
-void SetFieldShort(jobject obj, jfieldID fieldID, jshort value) {
+static void SetFieldShort(jobject obj, jfieldID fieldID, jshort value) {
     if (!obj || !fieldID) return;
     ApiWritemem(&value, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(jshort));
 }
 
-void SetFieldLong(jobject obj, jfieldID fieldID, jlong value) {
+static void SetFieldLong(jobject obj, jfieldID fieldID, jlong value) {
     if (!obj || !fieldID) return;
     ApiWritemem(&value, PTRMATH((uintptr_t)obj + (uintptr_t)fieldID), sizeof(jlong));
 }
 
-void SetStaticFieldObject(jclass clazz, jfieldID fieldID, jobject value) {
+static void SetStaticFieldObject(jclass clazz, jfieldID fieldID, jobject value) {
     if (!clazz || !fieldID) return;
 
     jobject javaMirror;
@@ -706,7 +657,7 @@ void SetStaticFieldObject(jclass clazz, jfieldID fieldID, jobject value) {
     ApiWritemem(&compressed, PTRMATH((uintptr_t)classOOP + (uintptr_t)fieldID), sizeof(uint32_t));
 }
 
-void SetStaticFieldInt(jclass clazz, jfieldID fieldID, jint value) {
+static void SetStaticFieldInt(jclass clazz, jfieldID fieldID, jint value) {
     if (!clazz || !fieldID) return;
 
     jobject javaMirror;
@@ -720,7 +671,7 @@ void SetStaticFieldInt(jclass clazz, jfieldID fieldID, jint value) {
     ApiWritemem(&value, PTRMATH((uintptr_t)classOOP + (uintptr_t)fieldID), sizeof(jint));
 }
 
-void SetStaticFieldFloat(jclass clazz, jfieldID fieldID, jfloat value) {
+static void SetStaticFieldFloat(jclass clazz, jfieldID fieldID, jfloat value) {
     if (!clazz || !fieldID) return;
 
     jobject javaMirror;
@@ -734,7 +685,7 @@ void SetStaticFieldFloat(jclass clazz, jfieldID fieldID, jfloat value) {
     ApiWritemem(&value, PTRMATH((uintptr_t)classOOP + (uintptr_t)fieldID), sizeof(jfloat));
 }
 
-void SetStaticFieldDouble(jclass clazz, jfieldID fieldID, jdouble value) {
+static void SetStaticFieldDouble(jclass clazz, jfieldID fieldID, jdouble value) {
     if (!clazz || !fieldID) return;
 
     jobject javaMirror;
@@ -748,7 +699,7 @@ void SetStaticFieldDouble(jclass clazz, jfieldID fieldID, jdouble value) {
     ApiWritemem(&value, PTRMATH((uintptr_t)classOOP + (uintptr_t)fieldID), sizeof(jdouble));
 }
 
-void SetStaticFieldBoolean(jclass clazz, jfieldID fieldID, jboolean value) {
+static void SetStaticFieldBoolean(jclass clazz, jfieldID fieldID, jboolean value) {
     if (!clazz || !fieldID) return;
 
     jobject javaMirror;
@@ -762,7 +713,7 @@ void SetStaticFieldBoolean(jclass clazz, jfieldID fieldID, jboolean value) {
     ApiWritemem(&value, PTRMATH((uintptr_t)classOOP + (uintptr_t)fieldID), sizeof(jboolean));
 }
 
-void SetStaticFieldByte(jclass clazz, jfieldID fieldID, jbyte value) {
+static void SetStaticFieldByte(jclass clazz, jfieldID fieldID, jbyte value) {
     if (!clazz || !fieldID) return;
 
     jobject javaMirror;
@@ -776,7 +727,7 @@ void SetStaticFieldByte(jclass clazz, jfieldID fieldID, jbyte value) {
     ApiWritemem(&value, PTRMATH((uintptr_t)classOOP + (uintptr_t)fieldID), sizeof(jbyte));
 }
 
-void SetStaticFieldChar(jclass clazz, jfieldID fieldID, jchar value) {
+static void SetStaticFieldChar(jclass clazz, jfieldID fieldID, jchar value) {
     if (!clazz || !fieldID) return;
 
     jobject javaMirror;
@@ -790,7 +741,7 @@ void SetStaticFieldChar(jclass clazz, jfieldID fieldID, jchar value) {
     ApiWritemem(&value, PTRMATH((uintptr_t)classOOP + (uintptr_t)fieldID), sizeof(jchar));
 }
 
-void SetStaticFieldShort(jclass clazz, jfieldID fieldID, jshort value) {
+static void SetStaticFieldShort(jclass clazz, jfieldID fieldID, jshort value) {
     if (!clazz || !fieldID) return;
 
     jobject javaMirror;
@@ -804,7 +755,7 @@ void SetStaticFieldShort(jclass clazz, jfieldID fieldID, jshort value) {
     ApiWritemem(&value, PTRMATH((uintptr_t)classOOP + (uintptr_t)fieldID), sizeof(jshort));
 }
 
-void SetStaticFieldLong(jclass clazz, jfieldID fieldID, jlong value) {
+static void SetStaticFieldLong(jclass clazz, jfieldID fieldID, jlong value) {
     if (!clazz || !fieldID) return;
 
     jobject javaMirror;
@@ -817,7 +768,7 @@ void SetStaticFieldLong(jclass clazz, jfieldID fieldID, jlong value) {
 
     ApiWritemem(&value, PTRMATH((uintptr_t)classOOP + (uintptr_t)fieldID), sizeof(jlong));
 }
-jclass GetObjectClass(jobject object)
+static jclass GetObjectClass(jobject object)
 {
     if (!object) return 0;
 
@@ -857,7 +808,7 @@ jclass GetObjectClass(jobject object)
     }
 }
 
-jboolean IsInstanceOf(jobject obj, jclass clazz) {
+static jboolean IsInstanceOf(jobject obj, jclass clazz) {
     if (!obj || !clazz) return 0;
 
     jclass objClass = GetObjectClass(obj);
@@ -882,30 +833,30 @@ jboolean IsInstanceOf(jobject obj, jclass clazz) {
     return 0;
 }
 
-void MonitorEnter(jobject obj) {
+static void MonitorEnter(jobject obj) {
     (void)obj;
 }
 
-void MonitorExit(jobject obj) {
+static void MonitorExit(jobject obj) {
     (void)obj;
 }
 
-void SetObjectField(jobject obj, jfieldID fieldID, jobject value) {
+static void SetObjectField(jobject obj, jfieldID fieldID, jobject value) {
     SetFieldObject(obj, fieldID, value);
 }
 
-jboolean IsSameObject(jobject obj1, jobject obj2) {
+static jboolean IsSameObject(jobject obj1, jobject obj2) {
     return obj1 == obj2 ? 1 : 0;
 }
 
-jclass GetSuperclass(jclass clazz) {
+static jclass GetSuperclass(jclass clazz) {
     if (!clazz) return NULL;
     jclass superClass = NULL;
     ApiReadmem(&superClass, PTRMATH((uintptr_t)clazz + (uintptr_t)SuperEntry->offset), sizeof(jclass));
     return superClass;
 }
 
-jboolean IsAssignableFrom(jclass sub, jclass super) {
+static jboolean IsAssignableFrom(jclass sub, jclass super) {
     if (!sub || !super) return 0;
     if (sub == super) return 1;
 
@@ -926,7 +877,7 @@ jboolean IsAssignableFrom(jclass sub, jclass super) {
     return 0;
 }
 
-jobject AllocObject(jclass clazz) {
+static jobject AllocObject(jclass clazz) {
     (void)clazz;
     return NULL;
 }

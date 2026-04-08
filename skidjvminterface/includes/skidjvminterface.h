@@ -155,6 +155,28 @@ typedef struct _IJVMINTERFACE {
     jobject(*allocObject)(jclass clazz);
 } IJVMINTERFACE, * PIJVMINTERFACE;
 
+typedef struct {
+    uint16_t _flags;
+} AccessFlags;
+typedef struct {
+    uint32_t phar;
+    uint16_t _length;
+    char _body[255];
+} Symbol;
+typedef struct {
+    uint16_t _shorts[6];
+} FieldInfo17;
+
+enum FieldOffset {
+    AccessFlagsOffset = 0,
+    NameIndexOffset = 1,
+    SignatureIndexOffset = 2,
+    InitvalIndexOffset = 3,
+    LowPackedOffset = 4,
+    HighPackedOffset = 5,
+    FieldSlots = 6
+};
+
 /* Process Api */
 SJStatus ApiFindFirstProcessByTitle(Out_ PJvmProccess Proc, 
                                     In_ PCHAR ProcName, 
@@ -199,6 +221,8 @@ SJStatus ApiNewJvmInterface(In_ PHotspotContext Context,
 SJStatus ApiNewJvmInterfaceFor17J(In_ PHotspotContext Context,
                                   Out_ PIJVMINTERFACE* Interface);
 
+SJStatus ApiNewJvmInterfaceFor21J(In_ PHotspotContext Context, 
+                                  Out_ PIJVMINTERFACE* Interface);
 /* Macros for deployment */
 #define ExpandedBodyReturnStatus \
 	SJStatus Status = SJSuccess; \
