@@ -325,32 +325,101 @@ static jclass FindClass(PCHAR name) {
     return NULL;
 }
 
+static uint32_t read_string_leb2(const uint8_t* data, size_t* pos)
+{
+    uint32_t sum = data[(*pos)++] - 1;
+    if (sum < 191) return sum;
+
+    int shift = 6;
+    while (1) {
+        uint8_t b = data[(*pos)++];
+        sum += (b - 1) << shift;
+        if (b < (1 + 191)) break;
+        shift += 6;
+    }
+    return sum;
+}
+
+static void read_field_info20(FieldInfo20* out, const uint8_t* buffer, size_t* pos)
+{
+    out->_name_index = (uint16_t)read_string_leb2(buffer, pos);
+    out->_signature_index = (uint16_t)read_string_leb2(buffer, pos);
+    out->_offset = read_string_leb2(buffer, pos);
+    uint16_t access_flags_value = (uint16_t)read_string_leb2(buffer, pos);
+    access_flags_init(&out->_access_flags, access_flags_value);
+
+    uint32_t field_flags_value = read_string_leb2(buffer, pos);
+    field_flags_init(&out->_field_flags, field_flags_value);
+
+    if (field_flags_is_initialized(&out->_field_flags)) {
+        out->_initializer_index = (uint16_t)read_string_leb2(buffer, pos);
+    }
+    if (field_flags_is_generic(&out->_field_flags)) {
+        out->_generic_signature_index = (uint16_t)read_string_leb2(buffer, pos);
+    }
+    if (field_flags_is_contended(&out->_field_flags)) {
+        out->_contention_group = (uint16_t)read_string_leb2(buffer, pos);
+    }
+}
+
+
 static jfieldID FindField(jclass clazz, PCHAR fieldName, PCHAR signature) {
-    if (!clazz || !fieldName) return 0;
-
-    InitEntries();
-
-    void* constants = NULL;
-    void* fields = NULL;
-    uint16_t fieldCount = 0;
-
-    if (!ApiReadmem(&constants, PTRMATH((uintptr_t)clazz + (uintptr_t)ConstantsEntry->offset), sizeof(void*)) ||
-        !ApiReadmem(&fields, PTRMATH((uintptr_t)clazz + (uintptr_t)FieldinfoStreamEntry->offset), sizeof(void*)) ||
-        !ApiReadmem(&fieldCount, PTRMATH((uintptr_t)clazz + (uintptr_t)FieldCounterEntry->offset), sizeof(uint16_t))) {
+    if (!clazz || !fieldName) {
         return 0;
     }
 
-    fields = PTRMATH((uintptr_t)fields + sizeof(int));
-    uintptr_t symbolBase = (uintptr_t)constants + (uintptr_t)ConstantsSizeEntry->offset + sizeof(int) + sizeof(void*);
+    if (!ConstantsEntry || !ConstantsSizeEntry || !FieldinfoStreamEntry) {
+        return 0;
+    }
 
-    for (uint16_t i = 0; i < fieldCount; i++) {
-        FieldInfo17 field;
-        uintptr_t fieldAddr = (uintptr_t)fields + (i * 6 * sizeof(unsigned short));
+    void* constants;
+    if (!ApiReadmem(&constants, PTRMATH((uintptr_t)clazz + ConstantsEntry->offset), sizeof(constants))) {
+        return 0;
+    }
 
-        if (!ApiReadmem(&field, (void*)fieldAddr, sizeof(FieldInfo17))) continue;
+    size_t constPoolSize = ConstantsSizeEntry->offset + sizeof(int) + sizeof(void*);
+    uintptr_t base = (uintptr_t)constants + constPoolSize;
 
-        uintptr_t nameAddr = symbolBase + (FieldInfo17NameIndex(&field) * sizeof(void*));
-        uintptr_t sigAddr = symbolBase + (FieldInfo17SignatureIndex(&field) * sizeof(void*));
+    void* fieldInfo = GetPointer(PTRMATH((uintptr_t)clazz + FieldinfoStreamEntry->offset));
+    if (!fieldInfo) {
+        return 0;
+    }
+
+    int length = 0;
+    if (!ApiReadmem(&length, fieldInfo, sizeof(length))) {
+        return 0;
+    }
+
+    if (length <= 0) {
+        return 0;
+    }
+
+    uint8_t* buffer = (uint8_t*)malloc(length);
+    if (!buffer) {
+        return 0;
+    }
+
+    if (!ApiReadmem(buffer, (void*)((uintptr_t)fieldInfo + sizeof(int)), length)) {
+        free(buffer);
+        return 0;
+    }
+
+    size_t pos = 0;
+
+    uint32_t java_count = read_string_leb2(buffer, &pos);
+    uint32_t injected_count = read_string_leb2(buffer, &pos);
+    uint32_t total = java_count + injected_count;
+
+    jfieldID result = 0;
+    for (uint32_t i = 0; i < total; ++i) {
+        FieldInfo20 field;
+        field_info20_init_default(&field);
+        field._index = i;
+
+        read_field_info20(&field, buffer, &pos);
+
+        uintptr_t nameAddr = base + (field._name_index * sizeof(intptr_t));
+        uintptr_t sigAddr = base + (field._signature_index * sizeof(intptr_t));
 
         void* namePtr = GetPointer((void*)nameAddr);
         void* sigPtr = GetPointer((void*)sigAddr);
@@ -365,13 +434,17 @@ static jfieldID FindField(jclass clazz, PCHAR fieldName, PCHAR signature) {
             SymbolGetString(&nameSymbol, currentName, sizeof(currentName));
             SymbolGetString(&sigSymbol, currentSig, sizeof(currentSig));
 
-            if (strcmp(currentName, fieldName) == 0 && (!signature || strcmp(currentSig, signature) == 0)) {
-                return (jfieldID)(uintptr_t)FieldInfo17Offset(&field);
+            if (strcmp(currentName, fieldName) == 0) {
+                if (signature == NULL || strcmp(currentSig, signature) == 0) {
+                    result = (jfieldID)(uintptr_t)field._offset;
+                    break;
+                }
             }
         }
     }
 
-    return 0;
+    free(buffer);
+    return result;
 }
 
 static jint GetArrayLen(jobject oop) {

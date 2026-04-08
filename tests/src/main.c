@@ -14,20 +14,20 @@ int main(int argc, void* argv)
     ApiNewJvmInterface(&context, &jvm);
 
     while (1) {
-        jclass mcClass = jvm->findClass("net/minecraft/class_310");
+        jclass mcClass = jvm->findClass("flk");
         if (!mcClass) {
             printf("MinecraftClient class not found\n");
             break;
         }
         printf("MCKLASS without opbjectclass %p \n", mcClass);
 
-        jfieldID instanceField = jvm->findField(mcClass, "field_1700", "Lnet/minecraft/class_310;");
+        jfieldID instanceField = jvm->findField(mcClass, "F", "Lflk;");
         if (!instanceField) {
             printf("Instance field not found\n");
             break;
         }
         jobject mcInstance = jvm->getStaticFieldObject(mcClass, instanceField);
-        jfieldID worldField = jvm->findField(jvm->getObjectClass(mcInstance), "field_1687", "Lnet/minecraft/class_638;");
+        jfieldID worldField = jvm->findField(jvm->getObjectClass(mcInstance), "s", "Lgga;");
         jclass mcInstanceClass = jvm->getObjectClass(mcInstance);
 
         printf("INSTANCE = %p ; WORLD_ID = %d, WORLD = %p\n", mcInstance, worldField, jvm->getObjectField(mcInstance, worldField));
@@ -41,7 +41,7 @@ int main(int argc, void* argv)
         printf("Pointer mcklass %p \n", mc_klass);
 
 
-        jfieldID id = jvm->findField(mcClass, "field_1738", "I");
+        jfieldID id = jvm->findField(mcClass, "bf", "I");
     }
 
 }

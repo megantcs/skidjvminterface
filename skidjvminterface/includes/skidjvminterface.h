@@ -154,10 +154,52 @@ typedef struct _IJVMINTERFACE {
     jboolean(*isAssignableFrom)(jclass sub, jclass super);
     jobject(*allocObject)(jclass clazz);
 } IJVMINTERFACE, * PIJVMINTERFACE;
-
+/* For 17 Jvm */
 typedef struct {
     uint16_t _flags;
 } AccessFlags;
+
+static inline void access_flags_init(AccessFlags* af, uint16_t flags) {
+    af->_flags = flags;
+}
+
+static inline void access_flags_init_default(AccessFlags* af) {
+    af->_flags = 0;
+}
+
+static inline boolean access_is_public(const AccessFlags* af) {
+    return (af->_flags & 0x0001) != 0;
+}
+
+static inline boolean access_is_private(const AccessFlags* af) {
+    return (af->_flags & 0x0002) != 0;
+}
+
+static inline boolean access_is_protected(const AccessFlags* af) {
+    return (af->_flags & 0x0004) != 0;
+}
+
+static inline boolean access_is_static(const AccessFlags* af) {
+    return (af->_flags & 0x0008) != 0;
+}
+
+static inline boolean access_is_final(const AccessFlags* af) {
+    return (af->_flags & 0x0010) != 0;
+}
+
+static inline boolean access_is_volatile(const AccessFlags* af) {
+    return (af->_flags & 0x0040) != 0;
+}
+
+static inline boolean access_is_transient(const AccessFlags* af) {
+    return (af->_flags & 0x0080) != 0;
+}
+
+static inline uint32_t access_flag_mask(int p) {
+    return (uint32_t)1 << p;
+}
+
+
 typedef struct {
     uint32_t phar;
     uint16_t _length;
@@ -176,6 +218,159 @@ enum FieldOffset {
     HighPackedOffset = 5,
     FieldSlots = 6
 };
+/* --------------------------------------------------- */
+
+/* forFor 21 Jvm */
+
+
+
+typedef enum {
+    FF_INITIALIZED,
+    FF_INJECTED,
+    FF_GENERIC,
+    FF_STABLE,
+    FF_CONTENDED
+} FieldFlagsBitPosition;
+
+static const uint32_t FIELD_FLAGS_OPTIONAL_ITEM_BIT_MASK =
+(1u << FF_INITIALIZED) |
+(1u << FF_GENERIC) |
+(1u << FF_CONTENDED);
+
+typedef struct {
+    uint32_t _flags;
+} FieldFlags;
+
+static inline void field_flags_init(FieldFlags* ff, uint32_t flags) {
+    ff->_flags = flags;
+}
+
+static inline void field_flags_init_default(FieldFlags* ff) {
+    ff->_flags = 0;
+}
+
+
+static inline boolean field_flags_test_flag(const FieldFlags* ff, FieldFlagsBitPosition pos) {
+    return (ff->_flags & (1u << pos)) != 0;
+}
+
+static inline void field_flags_update_flag(FieldFlags* ff, FieldFlagsBitPosition pos, boolean z) {
+    if (z) {
+        ff->_flags |= (1u << pos);
+    }
+    else {
+        ff->_flags &= ~(1u << pos);
+    }
+}
+
+static inline uint32_t field_flags_as_uint(const FieldFlags* ff) {
+    return ff->_flags;
+}
+
+static inline boolean field_flags_has_any_optionals(const FieldFlags* ff) {
+    return (ff->_flags & FIELD_FLAGS_OPTIONAL_ITEM_BIT_MASK) != 0;
+}
+
+// Геттеры
+static inline boolean field_flags_is_initialized(const FieldFlags* ff) {
+    return field_flags_test_flag(ff, FF_INITIALIZED);
+}
+
+static inline boolean field_flags_is_injected(const FieldFlags* ff) {
+    return field_flags_test_flag(ff, FF_INJECTED);
+}
+
+static inline boolean field_flags_is_generic(const FieldFlags* ff) {
+    return field_flags_test_flag(ff, FF_GENERIC);
+}
+
+static inline boolean field_flags_is_stable(const FieldFlags* ff) {
+    return field_flags_test_flag(ff, FF_STABLE);
+}
+
+static inline boolean field_flags_is_contended(const FieldFlags* ff) {
+    return field_flags_test_flag(ff, FF_CONTENDED);
+}
+
+// Сеттеры
+static inline void field_flags_set_initialized(FieldFlags* ff, boolean z) {
+    field_flags_update_flag(ff, FF_INITIALIZED, z);
+}
+
+static inline void field_flags_set_injected(FieldFlags* ff, boolean z) {
+    field_flags_update_flag(ff, FF_INJECTED, z);
+}
+
+static inline void field_flags_set_generic(FieldFlags* ff, boolean z) {
+    field_flags_update_flag(ff, FF_GENERIC, z);
+}
+
+static inline void field_flags_set_stable(FieldFlags* ff, boolean z) {
+    field_flags_update_flag(ff, FF_STABLE, z);
+}
+
+static inline void field_flags_set_contended(FieldFlags* ff, boolean z) {
+    field_flags_update_flag(ff, FF_CONTENDED, z);
+}
+
+static inline void field_flags_mark_initialized(FieldFlags* ff) {
+    field_flags_set_initialized(ff, 1);
+}
+
+static inline void field_flags_mark_injected(FieldFlags* ff) {
+    field_flags_set_injected(ff, 1);
+}
+
+static inline void field_flags_mark_generic(FieldFlags* ff) {
+    field_flags_set_generic(ff, 1);
+}
+
+static inline void field_flags_mark_stable(FieldFlags* ff) {
+    field_flags_set_stable(ff, 1);
+}
+
+static inline void field_flags_mark_contended(FieldFlags* ff) {
+    field_flags_set_contended(ff, 1);
+}
+
+typedef struct 
+{
+    uint32_t _index;
+    uint16_t _name_index;
+    uint16_t _signature_index;
+    uint32_t _offset;
+    AccessFlags _access_flags;
+    FieldFlags _field_flags;
+    uint16_t _initializer_index;
+    uint16_t _generic_signature_index;
+    uint16_t _contention_group;
+
+
+}FieldInfo20 ;
+
+static inline void field_info20_init_default(FieldInfo20* fi) {
+    fi->_index = 0;
+    fi->_name_index = 0;
+    fi->_signature_index = 0;
+    fi->_offset = 0;
+    access_flags_init_default(&fi->_access_flags);
+    field_flags_init_default(&fi->_field_flags);
+    fi->_initializer_index = 0;
+    fi->_generic_signature_index = 0;
+    fi->_contention_group = 0;
+}
+
+static inline uint16_t field_info20_name_index(const FieldInfo20* fi) {
+    return fi->_name_index;
+}
+
+static inline uint16_t field_info20_signature_index(const FieldInfo20* fi) {
+    return fi->_signature_index;
+}
+
+static inline int field_info20_offset(const FieldInfo20* fi) {
+    return (int)fi->_offset;
+}
 
 /* Process Api */
 SJStatus ApiFindFirstProcessByTitle(Out_ PJvmProccess Proc, 
