@@ -135,8 +135,8 @@ SJStatus ApiNewHotspotContext(In_ JvmProccess Proc, Out_ PHotspotContext Context
     Status = ApiNewVmStructsEntry(Proc, symbols, &vmStructs);
     SJCheckStatus;
 
-    Out._proc = &Proc;
-    Out._vmStructs = vmStructs;
+    Out.Proc = &Proc;
+    Out.VMStructs = vmStructs;
 
     *Context = Out;
 

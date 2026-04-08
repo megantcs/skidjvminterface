@@ -1,4 +1,7 @@
 #include "../includes/skidjvminterface.h"
+
+#pragma comment(lib, "version.lib") 
+
 #include <Psapi.h>
 #include <TlHelp32.h>
 #include "stdio.h"
@@ -114,6 +117,44 @@ SJStatus ApiGetModuleAddress(Out_ PVOID* Module, In_ HANDLE Process, In_ PCHAR M
 	return SJStatusNotFound;
 }
 
+JvmVersion ApiGetJvmVersionFromModule(In_ HANDLE hProcess, 
+									  In_ PVOID hJvmDll)
+{
+	char path[MAX_PATH] = { 0 };
+	if (!GetModuleFileNameExA(hProcess, (HMODULE)hJvmDll, path, MAX_PATH)) {
+		return 0; 
+	}
+
+	DWORD dummy = 0;
+	DWORD size = GetFileVersionInfoSizeA(path, &dummy);
+	if (size == 0) return 0;
+
+	PVOID buffer = malloc(size);
+	if (!buffer) return 0;
+
+	JvmVersion version = 0;
+
+	if (GetFileVersionInfoA(path, 0, size, buffer)) {
+		VS_FIXEDFILEINFO* fileInfo = NULL;
+		UINT fileInfoLen = 0;
+
+		if (VerQueryValueA(buffer, "\\", (LPVOID*)&fileInfo, &fileInfoLen) && fileInfo) {
+			WORD major = HIWORD(fileInfo->dwFileVersionMS);
+			WORD minor = LOWORD(fileInfo->dwFileVersionMS);
+
+			if (major == 1) {
+				version = (JvmVersion)minor;
+			}
+			else {
+				version = (JvmVersion)major;
+			}
+		}
+	}
+
+	free(buffer);
+	return version;
+}
+
 SJStatus ApiNewJvmProcessByPid(Out_ PJvmProccess Proc, In_ DWORD PID)
 {
 	SJStatus Status = SJSuccess;
@@ -128,11 +169,14 @@ SJStatus ApiNewJvmProcessByPid(Out_ PJvmProccess Proc, In_ DWORD PID)
 	JvmProccess Out = { 0 };
 
 	Status = ApiGetModuleAddress(&hJvmDll, hProcess, "jvm.dll");
-	SJCheckStatus;
+	if (Status != SJSuccess) {
+		CloseHandle(hProcess); 
+		goto _return;
+	}
 
 	Out.hProccess = hProcess;
 	Out.hJvmDll = hJvmDll;
-	Out.version = Jvm17;
+	Out.version = ApiGetJvmVersionFromModule(hProcess, hJvmDll);
 
 	*Proc = Out;
 _return:

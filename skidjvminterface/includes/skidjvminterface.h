@@ -25,29 +25,36 @@ typedef void* jclass;
 typedef void* jobject;
 typedef void* jmethodID;
 
-#define SJSuccess				         1
-#define SJUnhandledError		         0x0001B
-#define SJInvalidState  		         0x000CB
-#define SJInvalidInParamaters	         0x0002B
-#define SJInvalidOutParamaters           0x0003B
-#define SJErrorOpenProces                0x0004B
-#define SJStatusNotFound                 0x0005B
-#define SJErrorEnumProcessModules        0x0006B
+#define SJSuccess				         1          // Success Status 
+#define SJUnhandledError		         0x0001B    // An unhandled error. for example, an exception.
+#define SJInvalidState  		         0x000CB    // Not a valid state. no pointers are set. or not valid data
+#define SJInvalidInParamaters	         0x0002B    // Invalid input parameters 
+#define SJInvalidOutParamaters           0x0003B    // Invalid output parameters 
+#define SJErrorOpenProces                0x0004B    // Could not be opened for any reason
+#define SJStatusNotFound                 0x0005B    // Status error: When something is not found
+#define SJErrorEnumProcessModules        0x0006B    // Could not list all modules for some reason
 
+/* convenient macros for checking 
+    states, clearly linked to specific names. */
 #define SJCheckStatus if(Status != SJSuccess) { goto _return; }
 #define SJCheckStatusEx(x, flag) if((x)) { Status = flag; goto _return; }
 #define SJCheckOutParam(x) SJCheckStatusEx(x, SJInvalidOutParamaters) 
 #define SJCheckInParam(x) SJCheckStatusEx(x, SJInvalidInParamaters) 
 
-#define Jvm17 17
+/* Macro for converting a pointer 
+    to an integer type and back to void* */
 #define PTRMATH(a) (void *) ((uintptr_t) a)
 
+/* By default, NULL is set to (void*)0. */
 #ifdef NULL
     #undef NULL
 #endif
 
 #define NULL 0
+/*  -----   */
 
+/* macro for creating typed 
+    arrays using a structure */
 #define NEW_STRUCT_LIST(x) \
 typedef struct _##x##List { \
     x* data;\
@@ -72,8 +79,9 @@ typedef struct _ExportSymbol {
     uint64_t address;
 }ExportSymbol, *PExportSymbol;
 
-NEW_STRUCT_LIST(VMStructEntry);
-NEW_STRUCT_LIST(ExportSymbol);
+/* Arrays */
+NEW_STRUCT_LIST(VMStructEntry);     // VMStructEntryList
+NEW_STRUCT_LIST(ExportSymbol);      // ExportSymbolList
 
 typedef struct _JvmProccess {
 	HANDLE hProccess;
@@ -82,10 +90,12 @@ typedef struct _JvmProccess {
 }JvmProccess, *PJvmProccess;
 
 typedef struct _HotspotContext {
-    VMStructEntryList _vmStructs;
-    PJvmProccess      _proc;
+    VMStructEntryList VMStructs;
+    PJvmProccess      Proc;
 }HotspotContext, *PHotspotContext;
 
+/* an interface in which methods are created. 
+        a java native interface mirror. */
 typedef struct _IJVMINTERFACE {
     jclass(*findClass)(PCHAR);
     jfieldID(*findField)(jclass clazz, PCHAR fieldName, PCHAR signature);
@@ -144,49 +154,6 @@ typedef struct _IJVMINTERFACE {
     jobject(*allocObject)(jclass clazz);
 } IJVMINTERFACE, * PIJVMINTERFACE;
 
-typedef struct {
-    int major;
-    int minor;
-    int update;
-
-    unsigned int use_compressed_oops;
-    unsigned int compressed_oops_base;
-    unsigned int compressed_oops_shift;
-
-    unsigned int use_compressed_class_pointers;
-    unsigned int compressed_class_pointers_base;
-    unsigned int compressed_class_pointers_shift;
-
-    unsigned int collectedheap;
-    unsigned int classloaderdatagraph_head;
-    unsigned int symboltable;
-    unsigned int systemcl;
-
-    unsigned int fieldinfo_stream;
-    unsigned int fields;
-    unsigned int fields_count;
-    unsigned int methods;
-    unsigned int klass_constants;
-
-    unsigned int klass_super;
-    unsigned int klass_javamirror;
-    unsigned int klass_name;
-    unsigned int klass_next_link;
-    unsigned int klass_super_check_offset;
-    unsigned int klass_secondary_supers;
-
-    unsigned int symbol_length;
-    unsigned int symbol_body;
-    unsigned int cp_base;
-
-    unsigned int cld_class_loader;
-    unsigned int cld_has_class_mirror_holder;
-    unsigned int cld_klasses;
-    unsigned int cld_next;
-
-    unsigned int local_interfaces;
-} JVMVersion;
-
 /* Process Api */
 SJStatus ApiFindFirstProcessByTitle(Out_ PJvmProccess Proc, 
                                     In_ PCHAR ProcName, 
@@ -200,6 +167,9 @@ SJStatus ApiGetModuleAddress(Out_ PVOID* Module,
 
 SJStatus ApiNewJvmProcessByPid(Out_ PJvmProccess Proc, 
                                In_ DWORD PID);
+
+JvmVersion ApiGetJvmVersionFromModule(In_ HANDLE hProcess, 
+                                      In_ PVOID hJvmDll);
 
 SJStatus ApiGetExportSymbolsByProcess(Out_ ExportSymbolList* ExportSymbol, 
                                       In_ JvmProccess Proc);
@@ -226,7 +196,7 @@ SJStatus ApiNewJvmInterface(In_ PHotspotContext Context,
                             Out_ PIJVMINTERFACE* Interface);
 
 SJStatus ApiNewJvmInterfaceFor17J(In_ PHotspotContext Context,
-                            Out_ PIJVMINTERFACE* Interface);
+                                  Out_ PIJVMINTERFACE* Interface);
 
 /* Macros for deployment */
 #define ExpandedBodyReturnStatus \

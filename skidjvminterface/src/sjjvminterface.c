@@ -2,27 +2,30 @@
 
 static HotspotContext CopyHotspotContext(HotspotContext src) {
     HotspotContext copy = src;
-    if (src._vmStructs.data != NULL && src._vmStructs.size > 0) {
-        copy._vmStructs.data = malloc(src._vmStructs.size * sizeof(VMStructEntry));
-        if (copy._vmStructs.data != NULL) {
-            memcpy(copy._vmStructs.data,
-                src._vmStructs.data,
-                src._vmStructs.size * sizeof(VMStructEntry));
+    if (src.VMStructs.data != NULL && src.VMStructs.size > 0) {
+        copy.VMStructs.data = malloc(src.VMStructs.size * sizeof(VMStructEntry));
+        if (copy.VMStructs.data != NULL) {
+            memcpy(copy.VMStructs.data,
+                src.VMStructs.data,
+                src.VMStructs.size * sizeof(VMStructEntry));
         }
     }
     return copy;
 }
 
 static void FreeHotspotContextCopy(HotspotContext* ctx) {
-    if (ctx->_vmStructs.data != NULL) {
-        free(ctx->_vmStructs.data);
-        ctx->_vmStructs.data = NULL;
-        ctx->_vmStructs.size = 0;
+    if (ctx->VMStructs.data != NULL) {
+        free(ctx->VMStructs.data);
+        ctx->VMStructs.data = NULL;
+        ctx->VMStructs.size = 0;
     }
 }
 
 SJStatus ApiNewJvmInterface(In_ PHotspotContext Context,
     Out_ PIJVMINTERFACE* Interface)
 {
-    return ApiNewJvmInterfaceFor17J(Context, Interface);
+    if (Context->Proc->version == 17) {
+        return ApiNewJvmInterfaceFor17J(Context, Interface);
+    }
+    return SJStatusNotFound;
 }

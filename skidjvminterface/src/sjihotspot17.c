@@ -26,7 +26,7 @@ void* GetPointer(void* pointer)
 }
 
 PVMStructEntry FindStructure(PCHAR typeName, PCHAR fieldName) {
-    return ApiFindStructure(&ActivityContext->_vmStructs, typeName, fieldName);
+    return ApiFindStructure(&ActivityContext->VMStructs, typeName, fieldName);
 }
 
 VMStructEntry* Compressed17OopBaseAddres()
@@ -832,7 +832,7 @@ jobject AllocObject(jclass clazz) {
 SJStatus ApiNewJvmInterfaceFor17J(In_ PHotspotContext Context, Out_ PIJVMINTERFACE* Interface)
 {
     ActivityContext = Context;
-    jvm = Context->_proc->hJvmDll;
+    jvm = Context->Proc->hJvmDll;
 
     InitEntries();
 
