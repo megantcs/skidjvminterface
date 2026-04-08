@@ -1,5 +1,9 @@
 #include "../includes/skidjvminterface.h"
 #include <string.h>
+<<<<<<< HEAD
+=======
+#include <stdio.h>
+>>>>>>> 01e1a52d8fb32884195b12d1f4e32380b4729336
 
 PHotspotContext ActivityContext = NULL;
 PVOID jvm = NULL;
@@ -287,14 +291,34 @@ void* DecodeKlass(jclass klass)
         base = (void*)GetCompressedKlassPointersBase();
         shift = GetCompressedKlassPointersOopShift();
 
+<<<<<<< HEAD
         assert(flag || base || shift);
+=======
+        if (!flag || !base || !shift)
+        {
+            printf("Error at get base or flags or shift\n");
+
+        }
+>>>>>>> 01e1a52d8fb32884195b12d1f4e32380b4729336
 
         if (flag)
         {
             value = (value << shift) + (uintptr_t)base;
         }
+<<<<<<< HEAD
     }
 
+=======
+        else
+        {
+            printf("Error at flag by DecodeKlas\n");
+        }
+    }
+    else
+    {
+        printf("Erorr at NullCheckEntry by DecodeKlass\n");
+    }
+>>>>>>> 01e1a52d8fb32884195b12d1f4e32380b4729336
     return (jclass)klass;
 };
 

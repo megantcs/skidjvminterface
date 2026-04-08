@@ -30,8 +30,11 @@ SJStatus ApiNewJvmInterface(In_ PHotspotContext Context,
     if (Context->Proc->version == 17) {
         return ApiNewJvmInterfaceFor17J(Context, Interface);
     }
+<<<<<<< HEAD
     if (Context->Proc->version == 21) {
         return ApiNewJvmInterfaceFor21J(Context, Interface);
     }
+=======
+>>>>>>> 01e1a52d8fb32884195b12d1f4e32380b4729336
     return SJStatusNotFound;
 }
