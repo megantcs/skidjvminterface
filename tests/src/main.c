@@ -4,35 +4,6 @@
 
 int main(int argc, void* argv) 
 {
-    JvmProccess Proc;
-
-    if (!ApiFindFirstProcessByTitle(&Proc, "javaw.exe", "Minecraft")) {
-        printf("Game not found!");
-        abort();
-    }
-
-    HotspotContext Context;
-    SJStatus Status = ApiNewHotspotContext(Proc, &Context);
-    if (Status != SJSuccess) {
-        printf("Error create hotspot context: %d\n", Status);
-        abort();
-    }
-
-    PIJVMINTERFACE JvmInterface;
-    Status = ApiNewJvmInterface(&Context, &JvmInterface);
-
-    if (Status != SJSuccess) {
-        printf("Error create jvm interface: %d\n", Status);
-        abort();
-    }
-
-    jclass MinecraftClass = JvmInterface->findClass("net/minecraft/class_310");
-    jfieldID MinecraftInstanceId = JvmInterface->findField(MinecraftClass, "field_1700", "Lnet/minecraft/class_310;");
-
-    jobject Minecraft = JvmInterface->getStaticFieldObject(MinecraftClass, MinecraftInstanceId);
-
-    printf("Found Minecraft instance: %p\n", Minecraft);
-
 	JvmProccess proc;
 	SJStatus status = ApiFindFirstProcessByTitle(&proc, "javaw.exe", "Minecraft");
 

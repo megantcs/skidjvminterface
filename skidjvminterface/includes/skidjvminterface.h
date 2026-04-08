@@ -5,6 +5,7 @@
 
 #include <Windows.h>
 #include <stdint.h>
+#include <assert.h>
 
 #define In_
 #define Out_

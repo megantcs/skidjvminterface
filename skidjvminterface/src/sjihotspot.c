@@ -15,6 +15,7 @@ static VMStructEntryList ShadowParseVMStructs(PJvmProccess proc, ExportSymbolLis
         }
     }
 
+    assert(structsSymbolRVA != 0);
     if (structsSymbolRVA == 0) {
         return result;
     }
@@ -23,10 +24,12 @@ static VMStructEntryList ShadowParseVMStructs(PJvmProccess proc, ExportSymbolLis
 
     uint64_t structArrayPtr = 0;
     if (!ApiReadmem(&structArrayPtr, structsSymbolAddr, sizeof(structArrayPtr))) {
+        assert(TRUE && "Error readmem structs");
         return result;
     }
 
     if (!structArrayPtr) {
+        assert(TRUE && "Error pointer structs");
         return result;
     }
 
@@ -73,6 +76,7 @@ static VMStructEntryList ShadowParseVMStructs(PJvmProccess proc, ExportSymbolLis
     }
 
     if (structCount == 0) {
+        assert(TRUE && "Structs not found");
         free(tempStructs);
         return result;
     }
@@ -92,66 +96,77 @@ static VMStructEntryList ShadowParseVMStructs(PJvmProccess proc, ExportSymbolLis
     result.size = structCount;
 
     free(tempStructs);
-
     return result;
 }
 
 SJStatus ApiNewVmStructsEntry(In_ JvmProccess Proc, In_ ExportSymbolList SymbolList, Out_ VMStructEntryList* OutList) {
-    if (!OutList) {
-        return SJInvalidOutParamaters;
-    }
+    SJStatus Status = SJSuccess;
 
+    SJCheckOutParam(OutList == NULL);
+    SJCheckInParam(Proc.hJvmDll == NULL
+        || Proc.hProccess == NULL);
+    SJCheckInParam(SymbolList.size == NULL 
+        || SymbolList.data == NULL);
+    
     VMStructEntryList list = ShadowParseVMStructs(&Proc, &SymbolList);
     if (list.size == 0 || !list.data) {
         return SJStatusNotFound;
     }
 
     *OutList = list;
-    return SJSuccess;
+_return:
+    return Status;
 }
 
 PVMStructEntry ApiFindStructure(VMStructEntryList* list, PCHAR typeName, PCHAR fieldName)
 {
+    assert(list && "List cannot be nullptr");
+    assert(typeName && "TypeName cannot be nullptr");
+    assert(fieldName && "FieldName cannot be nullptr");
+
     for (DWORD i = 0; i < list->size; ++i) {
         VMStructEntry entry = list->data[i];
         if (strcmp(entry.typeName, typeName) == 0 && strcmp(entry.fieldName, fieldName) == 0) {
             return &list->data[i];
         }
     }
+    assert(TRUE && "Structure not found");
     return NULL;
 }
 
 SJStatus ApiNewHotspotContext(In_ JvmProccess Proc, Out_ PHotspotContext Context) {
     SJStatus Status = SJSuccess;
-    HotspotContext Out = { 0 };
-    ExportSymbolList symbols = { 0 };
-    VMStructEntryList vmStructs = { 0 };
+
+    HotspotContext      Out = { 0 };
+    ExportSymbolList    Symbols = { 0 };
+    VMStructEntryList   VmStructs = { 0 };
 
     SJCheckOutParam(Context == NULL);
+    SJCheckInParam(Proc.hJvmDll == NULL || 
+        Proc.hProccess == NULL);
 
-    Status = ApiGetExportSymbolsByProcess(&symbols, Proc);
+    Status = ApiGetExportSymbolsByProcess(&Symbols, Proc);
     SJCheckStatus;
 
-    Status = ApiNewVmStructsEntry(Proc, symbols, &vmStructs);
+    Status = ApiNewVmStructsEntry(Proc, Symbols, &VmStructs);
     SJCheckStatus;
 
     Out.Proc = &Proc;
-    Out.VMStructs = vmStructs;
+    Out.VMStructs = VmStructs;
 
     *Context = Out;
-
 _return:
-    if (symbols.data) {
-        ApiFreeExportFunctionList(&symbols);
+    if (Symbols.data) {
+        ApiFreeExportFunctionList(&Symbols);
     }
 
-    if (Status != SJSuccess && vmStructs.data) {
-        for (DWORD i = 0; i < vmStructs.size; i++) {
-            if (vmStructs.data[i].typeName) free((void*)vmStructs.data[i].typeName);
-            if (vmStructs.data[i].fieldName) free((void*)vmStructs.data[i].fieldName);
-            if (vmStructs.data[i].typeString) free((void*)vmStructs.data[i].typeString);
+    if (Status != SJSuccess && VmStructs.data) {
+        for (DWORD i = 0; i < VmStructs.size; i++) {
+            if (VmStructs.data[i].typeName) free((void*)VmStructs.data[i].typeName);
+            if (VmStructs.data[i].fieldName) free((void*)VmStructs.data[i].fieldName);
+            if (VmStructs.data[i].typeString) free((void*)VmStructs.data[i].typeString);
         }
-        free(vmStructs.data);
+        free(VmStructs.data);
     }
 
     return Status;

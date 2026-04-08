@@ -14,6 +14,10 @@ static pZwWriteVirtualMemory ZwWriteVirtualMemory = NULL;
 BOOL InternalWritemem(PVOID buffer, PVOID addres, size_t size)
 {
 	if (!ZwWriteVirtualMemory) return FALSE;
+	assert(buffer != NULL 
+		|| addres != NULL 
+		|| size != NULL);
+
 	NTSTATUS status = ZwWriteVirtualMemory(ActivityTargetHandle, addres, buffer, size, NULL);
 	return (status == 0);
 }
@@ -21,6 +25,10 @@ BOOL InternalWritemem(PVOID buffer, PVOID addres, size_t size)
 BOOL InternalReadmem(PVOID* buffer, PVOID addres, size_t size)
 {
 	if (!ZwReadVirtualMemory) return FALSE;
+	assert(buffer != NULL
+		|| addres != NULL
+		|| size != NULL);
+
 	SIZE_T bytesRead = 0;
 	NTSTATUS status = ZwReadVirtualMemory(ActivityTargetHandle, addres, buffer, size, &bytesRead);
 	return (status == 0 && bytesRead == size);
@@ -36,11 +44,13 @@ VOID ApiSetTargetHandle(HANDLE Proc)
 		
 
 		if (!ntdll) {
+			assert(TRUE && "Error loaded ntdll.dll.");
 			abort();
 		}
 
 		ZwReadVirtualMemory = (pZwReadVirtualMemory)GetProcAddress(ntdll, "NtReadVirtualMemory");
 		ZwWriteVirtualMemory = (pZwWriteVirtualMemory)GetProcAddress(ntdll, "NtWriteVirtualMemory");
+
 		SingleInitialize = TRUE;
 	}
 }

@@ -287,6 +287,11 @@ ExportSymbolList InternalGetExportFunctionList(PJvmProccess proc) {
 
 SJStatus ApiGetExportSymbolsByProcess(Out_ ExportSymbolList* OutExportSymbolList, In_ JvmProccess Proc)
 {
+	SJStatus Status = SJSuccess;
+	SJCheckOutParam(OutExportSymbolList == NULL);
+	SJCheckInParam(Proc.hProccess == NULL 
+					|| Proc.hJvmDll == NULL);
+
 	ApiSetTargetHandle(Proc.hProccess);
 
 	ExportSymbolList Out = InternalGetExportFunctionList(&Proc);
@@ -295,7 +300,8 @@ SJStatus ApiGetExportSymbolsByProcess(Out_ ExportSymbolList* OutExportSymbolList
 	}
 
 	*OutExportSymbolList = Out;
-	return SJSuccess;
+_return:
+	return Status;
 }
 
 BOOL ApiFreeExportFunctionList(In_ ExportSymbolList* list) {

@@ -24,6 +24,9 @@ static void FreeHotspotContextCopy(HotspotContext* ctx) {
 SJStatus ApiNewJvmInterface(In_ PHotspotContext Context,
     Out_ PIJVMINTERFACE* Interface)
 {
+    if (Context == NULL || Context->Proc == NULL || Context->VMStructs.size == 0 || Interface == NULL)
+        return SJInvalidInParamaters;
+
     if (Context->Proc->version == 17) {
         return ApiNewJvmInterfaceFor17J(Context, Interface);
     }
