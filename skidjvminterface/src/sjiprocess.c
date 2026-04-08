@@ -124,14 +124,15 @@ SJStatus ApiNewJvmProcessByPid(Out_ PJvmProccess Proc, In_ DWORD PID)
 	HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, PID);
 	SJCheckStatusEx(!hProcess, SJErrorOpenProces);
 
-	PVOID hJvmDll = {0};
-	JvmProccess Out = {0};
+	PVOID hJvmDll = { 0 };
+	JvmProccess Out = { 0 };
 
 	Status = ApiGetModuleAddress(&hJvmDll, hProcess, "jvm.dll");
 	SJCheckStatus;
 
 	Out.hProccess = hProcess;
 	Out.hJvmDll = hJvmDll;
+	Out.version = Jvm17;
 
 	*Proc = Out;
 _return:

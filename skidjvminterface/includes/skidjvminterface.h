@@ -39,7 +39,8 @@ typedef const void* jmethodID;
 #define SJCheckOutParam(x) SJCheckStatusEx(x, SJInvalidOutParamaters) 
 #define SJCheckInParam(x) SJCheckStatusEx(x, SJInvalidInParamaters) 
 
-#define Jvm17 0x17
+#define Jvm17 17
+#define PTRMATH(a) (void *) ((uintptr_t) a)
 
 #ifdef NULL
     #undef NULL
@@ -86,8 +87,62 @@ typedef struct _HotspotContext {
 }HotspotContext, *PHotspotContext;
 
 typedef struct _IJVMINTERFACE {
-    jclass (*findClass)(PCHAR);
-}IJVMINTERFACE, *PIJVMINTERFACE;
+    jclass(*findClass)(PCHAR);
+    jfieldID(*findField)(jclass clazz, PCHAR fieldName, PCHAR signature);
+    jint(*getArrayLen)(jobject oop);
+    jobject(*getObjectField)(jobject obj, jfieldID fieldID);
+    jboolean(*isInstanceOf)(jobject obj, jclass clazz);
+    jclass(*getObjectClass)(jobject obj);
+
+    jobject(*getFieldObject)(jobject obj, jfieldID fieldID);
+    jint(*getFieldInt)(jobject obj, jfieldID fieldID);
+    jfloat(*getFieldFloat)(jobject obj, jfieldID fieldID);
+    jdouble(*getFieldDouble)(jobject obj, jfieldID fieldID);
+    jboolean(*getFieldBoolean)(jobject obj, jfieldID fieldID);
+    jbyte(*getFieldByte)(jobject obj, jfieldID fieldID);
+    jchar(*getFieldChar)(jobject obj, jfieldID fieldID);
+    jshort(*getFieldShort)(jobject obj, jfieldID fieldID);
+    jlong(*getFieldLong)(jobject obj, jfieldID fieldID);
+
+    jobject(*getStaticFieldObject)(jclass clazz, jfieldID fieldID);
+    jint(*getStaticFieldInt)(jclass clazz, jfieldID fieldID);
+    jfloat(*getStaticFieldFloat)(jclass clazz, jfieldID fieldID);
+    jdouble(*getStaticFieldDouble)(jclass clazz, jfieldID fieldID);
+    jboolean(*getStaticFieldBoolean)(jclass clazz, jfieldID fieldID);
+    jbyte(*getStaticFieldByte)(jclass clazz, jfieldID fieldID);
+    jchar(*getStaticFieldChar)(jclass clazz, jfieldID fieldID);
+    jshort(*getStaticFieldShort)(jclass clazz, jfieldID fieldID);
+    jlong(*getStaticFieldLong)(jclass clazz, jfieldID fieldID);
+
+    void(*setFieldObject)(jobject obj, jfieldID fieldID, jobject value);
+    void(*setFieldInt)(jobject obj, jfieldID fieldID, jint value);
+    void(*setFieldFloat)(jobject obj, jfieldID fieldID, jfloat value);
+    void(*setFieldDouble)(jobject obj, jfieldID fieldID, jdouble value);
+    void(*setFieldBoolean)(jobject obj, jfieldID fieldID, jboolean value);
+    void(*setFieldByte)(jobject obj, jfieldID fieldID, jbyte value);
+    void(*setFieldChar)(jobject obj, jfieldID fieldID, jchar value);
+    void(*setFieldShort)(jobject obj, jfieldID fieldID, jshort value);
+    void(*setFieldLong)(jobject obj, jfieldID fieldID, jlong value);
+
+    void(*setStaticFieldObject)(jclass clazz, jfieldID fieldID, jobject value);
+    void(*setStaticFieldInt)(jclass clazz, jfieldID fieldID, jint value);
+    void(*setStaticFieldFloat)(jclass clazz, jfieldID fieldID, jfloat value);
+    void(*setStaticFieldDouble)(jclass clazz, jfieldID fieldID, jdouble value);
+    void(*setStaticFieldBoolean)(jclass clazz, jfieldID fieldID, jboolean value);
+    void(*setStaticFieldByte)(jclass clazz, jfieldID fieldID, jbyte value);
+    void(*setStaticFieldChar)(jclass clazz, jfieldID fieldID, jchar value);
+    void(*setStaticFieldShort)(jclass clazz, jfieldID fieldID, jshort value);
+    void(*setStaticFieldLong)(jclass clazz, jfieldID fieldID, jlong value);
+
+    void(*setObjectField)(jobject obj, jfieldID fieldID, jobject value);
+    void(*getObjectArrayElement)(jobject oop, jobject* array, int start, int end);
+    void(*monitorEnter)(jobject obj);
+    void(*monitorExit)(jobject obj);
+    jboolean(*isSameObject)(jobject obj1, jobject obj2);
+    jclass(*getSuperclass)(jclass clazz);
+    jboolean(*isAssignableFrom)(jclass sub, jclass super);
+    jobject(*allocObject)(jclass clazz);
+} IJVMINTERFACE, * PIJVMINTERFACE;
 
 /* Process Api */
 SJStatus ApiFindFirstProcessByTitle(Out_ PJvmProccess Proc, 
@@ -101,10 +156,11 @@ SJStatus ApiGetModuleAddress(Out_ PVOID* Module,
                             In_ PCHAR ModuleName);
 
 SJStatus ApiNewJvmProcessByPid(Out_ PJvmProccess Proc, 
-                                  In_ DWORD PID);
+                               In_ DWORD PID);
 
 SJStatus ApiGetExportSymbolsByProcess(Out_ ExportSymbolList* ExportSymbol, 
                                       In_ JvmProccess Proc);
+
 BOOL ApiFreeExportFunctionList(In_ ExportSymbolList* list);
 
 /* Memory Api */
@@ -113,15 +169,17 @@ SJStatus    ApiWritemem(PVOID Buffer, PVOID Addres, size_t Size);
 SJStatus    ApiReadmem(PVOID Buffer, PVOID Addres, size_t Size);
 
 /* Hotspot Api */
-SJStatus ApiNewHotspotContext(In_ PJvmProccess Proc, 
+SJStatus ApiNewHotspotContext(In_ JvmProccess Proc, 
 							  Out_ PHotspotContext Context);
 
 SJStatus ApiNewVmStructsEntry(In_ JvmProccess Proc,
                               In_ ExportSymbolList SymbolList, 
                               Out_ VMStructEntryList* OutList);
 
+PVMStructEntry ApiFindStructure(VMStructEntryList* list, PCHAR typeName, PCHAR fieldName);
+
 /* Jvm Interface Api */
-SJStatus ApiNewJvmInterface(In_ PHotspotContext Context, 
+SJStatus ApiNewJvmInterface(In_ HotspotContext Context, 
                             Out_ PIJVMINTERFACE* Interface);
 
 /* Macros for deployment */

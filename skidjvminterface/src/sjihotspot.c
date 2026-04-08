@@ -1,5 +1,4 @@
 #include "../includes/skidjvminterface.h"
-#include "stdio.h"
 
 static VMStructEntryList ShadowParseVMStructs(PJvmProccess proc, ExportSymbolList* exports) {
     VMStructEntryList result = { NULL, 0 };
@@ -111,22 +110,32 @@ SJStatus ApiNewVmStructsEntry(In_ JvmProccess Proc, In_ ExportSymbolList SymbolL
     return SJSuccess;
 }
 
-SJStatus ApiNewHotspotContext(In_ PJvmProccess Proc, Out_ PHotspotContext Context) {
+PVMStructEntry ApiFindStructure(VMStructEntryList* list, PCHAR typeName, PCHAR fieldName)
+{
+    for (DWORD i = 0; i < list->size; ++i) {
+        VMStructEntry entry = list->data[i];
+        if (strcmp(entry.typeName, typeName) == 0 && strcmp(entry.fieldName, fieldName) == 0) {
+            return &list->data[i];
+        }
+    }
+    return NULL;
+}
+
+SJStatus ApiNewHotspotContext(In_ JvmProccess Proc, Out_ PHotspotContext Context) {
     SJStatus Status = SJSuccess;
     HotspotContext Out = { 0 };
     ExportSymbolList symbols = { 0 };
     VMStructEntryList vmStructs = { 0 };
 
-    SJCheckOutParam(Proc == NULL);
     SJCheckOutParam(Context == NULL);
 
-    Status = ApiGetExportSymbolsByProcess(&symbols, *Proc);
+    Status = ApiGetExportSymbolsByProcess(&symbols, Proc);
     SJCheckStatus;
 
-    Status = ApiNewVmStructsEntry(*Proc, symbols, &vmStructs);
+    Status = ApiNewVmStructsEntry(Proc, symbols, &vmStructs);
     SJCheckStatus;
 
-    Out._proc = Proc;
+    Out._proc = &Proc;
     Out._vmStructs = vmStructs;
 
     *Context = Out;
