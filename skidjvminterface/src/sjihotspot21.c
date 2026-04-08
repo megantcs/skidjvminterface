@@ -346,22 +346,21 @@ static void read_field_info20(FieldInfo20* out, const uint8_t* buffer, size_t* p
     out->_signature_index = (uint16_t)read_string_leb2(buffer, pos);
     out->_offset = read_string_leb2(buffer, pos);
     uint16_t access_flags_value = (uint16_t)read_string_leb2(buffer, pos);
-    access_flags_init(&out->_access_flags, access_flags_value);
+    AccessFlagsInit(&out->_access_flags, access_flags_value);
 
     uint32_t field_flags_value = read_string_leb2(buffer, pos);
-    field_flags_init(&out->_field_flags, field_flags_value);
+    FieldFlagsInit(&out->_field_flags, field_flags_value);
 
-    if (field_flags_is_initialized(&out->_field_flags)) {
+    if (FieldFlagsIsInitialized(&out->_field_flags)) {
         out->_initializer_index = (uint16_t)read_string_leb2(buffer, pos);
     }
-    if (field_flags_is_generic(&out->_field_flags)) {
+    if (FieldFlagsIsGeneric(&out->_field_flags)) {
         out->_generic_signature_index = (uint16_t)read_string_leb2(buffer, pos);
     }
-    if (field_flags_is_contended(&out->_field_flags)) {
+    if (FieldFlagsIsContended(&out->_field_flags)) {
         out->_contention_group = (uint16_t)read_string_leb2(buffer, pos);
     }
 }
-
 
 static jfieldID FindField(jclass clazz, PCHAR fieldName, PCHAR signature) {
     if (!clazz || !fieldName) {
@@ -413,7 +412,7 @@ static jfieldID FindField(jclass clazz, PCHAR fieldName, PCHAR signature) {
     jfieldID result = 0;
     for (uint32_t i = 0; i < total; ++i) {
         FieldInfo20 field;
-        field_info20_init_default(&field);
+        FieldInfo20InitDefault(&field);
         field._index = i;
 
         read_field_info20(&field, buffer, &pos);
