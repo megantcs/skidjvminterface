@@ -11,7 +11,8 @@ int main(int argc, void* argv)
 	ApiNewHotspotContext(proc, &context);
 
 	PIJVMINTERFACE jvm;
-	ApiNewJvmInterface(context, &jvm);
+	ApiNewJvmInterface(&context, &jvm);
+    
 
     while (1) {
         jclass mcClass = jvm->findClass("net/minecraft/class_310");

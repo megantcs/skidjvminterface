@@ -21,9 +21,9 @@ typedef long jlong;
 typedef float jfloat;
 typedef double jdouble;
 typedef unsigned short jfieldID;
-typedef const void* jclass;
-typedef const void* jobject;
-typedef const void* jmethodID;
+typedef void* jclass;
+typedef void* jobject;
+typedef void* jmethodID;
 
 #define SJSuccess				         1
 #define SJUnhandledError		         0x0001B
@@ -144,6 +144,49 @@ typedef struct _IJVMINTERFACE {
     jobject(*allocObject)(jclass clazz);
 } IJVMINTERFACE, * PIJVMINTERFACE;
 
+typedef struct {
+    int major;
+    int minor;
+    int update;
+
+    unsigned int use_compressed_oops;
+    unsigned int compressed_oops_base;
+    unsigned int compressed_oops_shift;
+
+    unsigned int use_compressed_class_pointers;
+    unsigned int compressed_class_pointers_base;
+    unsigned int compressed_class_pointers_shift;
+
+    unsigned int collectedheap;
+    unsigned int classloaderdatagraph_head;
+    unsigned int symboltable;
+    unsigned int systemcl;
+
+    unsigned int fieldinfo_stream;
+    unsigned int fields;
+    unsigned int fields_count;
+    unsigned int methods;
+    unsigned int klass_constants;
+
+    unsigned int klass_super;
+    unsigned int klass_javamirror;
+    unsigned int klass_name;
+    unsigned int klass_next_link;
+    unsigned int klass_super_check_offset;
+    unsigned int klass_secondary_supers;
+
+    unsigned int symbol_length;
+    unsigned int symbol_body;
+    unsigned int cp_base;
+
+    unsigned int cld_class_loader;
+    unsigned int cld_has_class_mirror_holder;
+    unsigned int cld_klasses;
+    unsigned int cld_next;
+
+    unsigned int local_interfaces;
+} JVMVersion;
+
 /* Process Api */
 SJStatus ApiFindFirstProcessByTitle(Out_ PJvmProccess Proc, 
                                     In_ PCHAR ProcName, 
@@ -179,7 +222,10 @@ SJStatus ApiNewVmStructsEntry(In_ JvmProccess Proc,
 PVMStructEntry ApiFindStructure(VMStructEntryList* list, PCHAR typeName, PCHAR fieldName);
 
 /* Jvm Interface Api */
-SJStatus ApiNewJvmInterface(In_ HotspotContext Context, 
+SJStatus ApiNewJvmInterface(In_ PHotspotContext Context,
+                            Out_ PIJVMINTERFACE* Interface);
+
+SJStatus ApiNewJvmInterfaceFor17J(In_ PHotspotContext Context,
                             Out_ PIJVMINTERFACE* Interface);
 
 /* Macros for deployment */
